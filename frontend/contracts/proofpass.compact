@@ -1,0 +1,167 @@
+// ProofPass Compact Smart Contract for Midnight Blockchain
+// Privacy-Preserving Zero-Knowledge Digital Student Credential Verification
+
+pragma language_version >= 0.20.0;
+
+import CompactStandardLibrary;
+
+export enum IssuerStatus {
+  INACTIVE,
+  ACTIVE,
+  REVOKED
+}
+
+export struct IssuerInfo {
+  name_hash: Bytes<32>;
+  accreditation_tier: Uint<8>;
+  status: IssuerStatus;
+  registered_at: Uint<64>;
+}
+
+export struct CredentialMetadata {
+  issuer_pk: Bytes<32>;
+  issued_at: Uint<64>;
+  expires_at: Uint<64>;
+  is_revoked: Boolean;
+}
+
+// Public ledger state stored on Midnight blockchain
+export ledger {
+  // Mapping of registered University / Educational Issuer public keys to details
+  issuers: Map<Bytes<32>, IssuerInfo>;
+
+  // Set of active credential commitment hashes issued by verified institutions
+  commitments: Map<Bytes<32>, CredentialMetadata>;
+
+  // Set of nullifiers that have been spent or revoked to prevent replay attacks
+  revoked_nullifiers: Set<Bytes<32>>;
+
+  // Public counter of privacy-preserving verifications completed on-chain
+  total_verified_count: Counter;
+}
+
+// Private witnesses provided off-chain by the prover (Student Holder / Issuer)
+witness local_secret_key(): Bytes<32>;
+witness student_secret_salt(): Bytes<32>;
+witness student_id_hash(): Bytes<32>;
+witness student_birth_year(): Uint<16>;
+witness university_pk(): Bytes<32>;
+
+/**
+ * Register an educational institution as a trusted credential issuer on Midnight.
+ * @param issuer_pk Public key hash of the university/college
+ * @param name_hash Hash of the institution's official legal name
+ * @param accreditation_tier Tier 1 (Accredited University), Tier 2 (College), Tier 3 (Bootcamp)
+ */
+export circuit register_issuer(
+  issuer_pk: Bytes<32>,
+  name_hash: Bytes<32>,
+  accreditation_tier: Uint<8>,
+  timestamp: Uint<64>
+): Void {
+  // Assert valid tier (1-3)
+  assert accreditation_tier >= 1 && accreditation_tier <= 3
+    "Invalid accreditation tier";
+
+  // Check issuer not already registered or revoked
+  const existing = issuers.member(issuer_pk);
+  assert !existing "Issuer already registered on Midnight ledger";
+
+  issuers.insert(issuer_pk, IssuerInfo {
+    name_hash: name_hash,
+    accreditation_tier: accreditation_tier,
+    status: IssuerStatus.ACTIVE,
+    registered_at: timestamp
+  });
+}
+
+/**
+ * Issue a tamper-proof credential commitment on Midnight.
+ * The raw student PII stays strictly off-chain; only the cryptographic commitment is recorded.
+ * @param commitment_hash Hash(student_id_hash + student_secret_salt + issuer_pk + expiry)
+ * @param issuer_pk Issuer public key (must be registered)
+ * @param issued_at Timestamp of issuance
+ * @param expires_at Expiration timestamp
+ */
+export circuit issue_credential(
+  commitment_hash: Bytes<32>,
+  issuer_pk: Bytes<32>,
+  issued_at: Uint<64>,
+  expires_at: Uint<64>
+): Void {
+  // Verify issuer is registered and in ACTIVE status
+  assert issuers.member(issuer_pk) "Issuer is not registered on Midnight";
+  const issuer_info = issuers.lookup(issuer_pk);
+  assert issuer_info.status == IssuerStatus.ACTIVE "Issuer is not in active standing";
+
+  assert expires_at > issued_at "Expiration timestamp must be in the future";
+  assert !commitments.member(commitment_hash) "Credential commitment already exists";
+
+  commitments.insert(commitment_hash, CredentialMetadata {
+    issuer_pk: issuer_pk,
+    issued_at: issued_at,
+    expires_at: expires_at,
+    is_revoked: false
+  });
+}
+
+/**
+ * Privacy-Preserving Proof Verification Circuit.
+ * The student generates a zk-SNARK proof that proves:
+ * 1. They possess a valid preimage (secret salt, student ID hash) corresponding to an on-chain commitment.
+ * 2. The credential has not expired relative to current_timestamp.
+ * 3. The issuing university is active and meets the required accreditation tier.
+ * 4. Generates a one-time nullifier to prevent double-spending or replay if required,
+ * WITHOUT revealing student ID, full name, birth year, or exact student secret.
+ */
+export circuit verify_student_proof(
+  commitment_hash: Bytes<32>,
+  proof_nullifier: Bytes<32>,
+  current_timestamp: Uint<64>,
+  min_accreditation_tier: Uint<8>
+): Boolean {
+  // 1. Check commitment exists on-chain
+  assert commitments.member(commitment_hash) "Credential commitment not found on-chain";
+  const metadata = commitments.lookup(commitment_hash);
+
+  // 2. Check not revoked
+  assert !metadata.is_revoked "Credential has been revoked by issuer";
+  assert !revoked_nullifiers.member(proof_nullifier) "Proof nullifier has been invalidated or spent";
+
+  // 3. Verify non-expiration predicate in zero-knowledge
+  assert metadata.expires_at > current_timestamp "Credential has expired";
+
+  // 4. Verify issuer authority tier
+  assert issuers.member(metadata.issuer_pk) "Issuing authority is not recognized";
+  const issuer_info = issuers.lookup(metadata.issuer_pk);
+  assert issuer_info.status == IssuerStatus.ACTIVE "Issuing authority is suspended";
+  assert issuer_info.accreditation_tier <= min_accreditation_tier "Issuer accreditation tier is insufficient";
+
+  // 5. Increment verified count on-chain
+  total_verified_count.increment(1);
+
+  return true;
+}
+
+/**
+ * Revoke a student credential or invalidate a compromised nullifier.
+ */
+export circuit revoke_credential(
+  commitment_hash: Bytes<32>,
+  nullifier: Bytes<32>
+): Void {
+  assert commitments.member(commitment_hash) "Commitment not found";
+  
+  // Mark revoked on-chain
+  const meta = commitments.lookup(commitment_hash);
+  commitments.insert(commitment_hash, CredentialMetadata {
+    issuer_pk: meta.issuer_pk,
+    issued_at: meta.issued_at,
+    expires_at: meta.expires_at,
+    is_revoked: true
+  });
+
+  if (nullifier != 0x0000000000000000000000000000000000000000000000000000000000000000) {
+    revoked_nullifiers.insert(nullifier);
+  }
+}

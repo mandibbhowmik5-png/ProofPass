@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #050B1A;
+    color: #F8FAFC;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+    background-image: 
+      radial-gradient(circle at 10% 10%, rgba(79, 255, 193, 0.05) 0%, transparent 45%),
+      radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(34, 211, 238, 0.04) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: rgba(10, 20, 40, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 46, 74, 0.8);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(34, 211, 238, 0.1);
+}
+
+.glass-card-glow {
+  background: linear-gradient(135deg, rgba(15, 30, 56, 0.85) 0%, rgba(10, 20, 40, 0.9) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(79, 255, 193, 0.15);
+}
+
+.glass-panel {
+  background: rgba(15, 30, 56, 0.6);
+  border: 1px solid rgba(30, 46, 74, 0.8);
+  border-radius: 16px;
+}
+
+.glass-input {
+  background: #050B1A;
+  border: 1px solid #1E2E4A;
+  border-radius: 12px;
+  color: #F8FAFC;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: #22D3EE;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+
+/* Multi-Gradient Primary Button (Mint -> Cyan -> Blue -> Violet) */
+.gradient-btn-primary {
+  background: linear-gradient(135deg, #4FFFC1 0%, #22D3EE 30%, #3B82F6 70%, #8B5CF6 100%);
+  color: #050B1A;
+  font-weight: 700;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(34, 211, 238, 0.35), 0 0 15px rgba(139, 92, 246, 0.25);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gradient-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 30px rgba(34, 211, 238, 0.5), 0 0 25px rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.gradient-btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* Gradient Text */
+.gradient-text-full {
+  background: linear-gradient(135deg, #4FFFC1 0%, #22D3EE 35%, #3B82F6 65%, #A855F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-mint-cyan {
+  background: linear-gradient(135deg, #4FFFC1 0%, #22D3EE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-blue-violet {
+  background: linear-gradient(135deg, #38BDF8 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Neon Badges */
+.badge-mint {
+  background: rgba(79, 255, 193, 0.12);
+  border: 1px solid rgba(79, 255, 193, 0.35);
+  color: #4FFFC1;
+}
+
+.badge-cyan {
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  color: #22D3EE;
+}
+
+.badge-violet {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #C084FC;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #050B1A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E2E4A;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3B82F680;
+}
