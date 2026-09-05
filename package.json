@@ -1,0 +1,28 @@
+{
+  "name": "proofpass-monorepo",
+  "version": "1.0.0",
+  "description": "ProofPass - Privacy-Preserving Student Credentials on Midnight (Monorepo)",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev:frontend",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "test": "npm --prefix backend run test && npm --prefix frontend run test",
+    "test:frontend": "npm --prefix frontend run test",
+    "test:backend": "npm --prefix backend run test"
+  },
+  "keywords": [
+    "midnight",
+    "cardano",
+    "zk-snarks",
+    "compact",
+    "credentials",
+    "zero-knowledge",
+    "privacy"
+  ],
+  "author": "ProofPass Team",
+  "license": "MIT"
+}
