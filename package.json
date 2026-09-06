@@ -7,7 +7,7 @@
     "dev": "npm run dev:frontend",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build": "npm --prefix frontend run build",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "test": "npm --prefix backend run test && npm --prefix frontend run test",
