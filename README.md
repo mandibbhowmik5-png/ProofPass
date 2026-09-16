@@ -1,8 +1,38 @@
-# 🛡️ ProofPass: Privacy-Preserving Digital Credential Verification on Midnight
+# 🔐 ProofPass: Privacy-Preserving Digital Credential Verification on Midnight
 
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod%20%7C%20Preview-00f5ff?style=for-the-badge&logo=shield)](https://docs.midnight.network)
 [![Smart Contract](https://img.shields.io/badge/Compact-zk--SNARK%20Circuit-indigo?style=for-the-badge)](contracts/proofpass.compact)
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-black?style=for-the-badge&logo=vercel)](https://proof-pass.vercel.app)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
+
+---
+
+## 🚀 Live Deployments
+
+| Network | URL |
+|---------|-----|
+| **Production** | https://proof-pass.vercel.app |
+| **Preview** | https://proof-pass-git-main-mandibbhowmik5-png.vercel.app |
+
+---
+
+## 📜 Midnight Smart Contract
+
+| Field | Value |
+|-------|-------|
+| **Contract Name** | `ProofPass` |
+| **Language** | Compact (Midnight ZK-SNARK DSL) |
+| **Source** | [`contracts/proofpass.compact`](contracts/proofpass.compact) |
+| **Preprod Address** | `mn1preprod1qr9x3ah7v2dmxq8fs4n2r8ld2qdegzq3v6v2xtka9rcsjgx7ew3mfq7l` |
+| **Preview Address** | `mn1preview1qzk8v5fptmryw4n96jm0n8dxtqe4jwm3h2la7u8r5ecs2fkgx4j9cmsv` |
+| **Preprod Explorer** | [explorer.midnight.network/preprod](https://explorer.midnight.network/preprod) |
+| **Preview Explorer** | [explorer.midnight.network/preview](https://explorer.midnight.network/preview) |
+| **Preprod Contract** | [View on Midnight Preprod Explorer](https://explorer.midnight.network/preprod/contracts/mn1preprod1qr9x3ah7v2dmxq8fs4n2r8ld2qdegzq3v6v2xtka9rcsjgx7ew3mfq7l) |
+| **Preview Contract** | [View on Midnight Preview Explorer](https://explorer.midnight.network/preview/contracts/mn1preview1qzk8v5fptmryw4n96jm0n8dxtqe4jwm3h2la7u8r5ecs2fkgx4j9cmsv) |
+
+> ProofPass uses Midnight's zero-knowledge Compact circuits. The `proofpass.compact` contract manages issuer registration, credential commitments, and ZK proof verification — **no student PII ever touches the public ledger**.
+
+---
 
 > **ProofPass** is a privacy-first digital credential platform built for the **Midnight blockchain ecosystem**. It allows accredited educational institutions (Universities) to issue tamper-proof digital credentials, students (Holders) to store them self-sovereignly and generate zero-knowledge proofs ("I am an active student at an accredited university"), and verifiers (hackathons, job fairs, student discounts) to verify status in real time **without accessing sensitive PII** (Full Legal Name, Student ID, Date of Birth, or GPA).
 
