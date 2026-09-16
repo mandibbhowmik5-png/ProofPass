@@ -23,14 +23,19 @@
 | **Contract Name** | `ProofPass` |
 | **Language** | Compact (Midnight ZK-SNARK DSL) |
 | **Source** | [`contracts/proofpass.compact`](contracts/proofpass.compact) |
-| **Preprod Address** | `mn1preprod1qr9x3ah7v2dmxq8fs4n2r8ld2qdegzq3v6v2xtka9rcsjgx7ew3mfq7l` |
-| **Preview Address** | `mn1preview1qzk8v5fptmryw4n96jm0n8dxtqe4jwm3h2la7u8r5ecs2fkgx4j9cmsv` |
-| **Preprod Explorer** | [explorer.midnight.network/preprod](https://explorer.midnight.network/preprod) |
-| **Preview Explorer** | [explorer.midnight.network/preview](https://explorer.midnight.network/preview) |
-| **Preprod Contract** | [View on Midnight Preprod Explorer](https://explorer.midnight.network/preprod/contracts/mn1preprod1qr9x3ah7v2dmxq8fs4n2r8ld2qdegzq3v6v2xtka9rcsjgx7ew3mfq7l) |
-| **Preview Contract** | [View on Midnight Preview Explorer](https://explorer.midnight.network/preview/contracts/mn1preview1qzk8v5fptmryw4n96jm0n8dxtqe4jwm3h2la7u8r5ecs2fkgx4j9cmsv) |
+| **Deploy Script** | [`contracts/deploy/src/deploy.ts`](contracts/deploy/src/deploy.ts) |
+| **Preprod Address** | *Deploy to get address — see [Deploy Guide](#deploying-the-smart-contract)* |
+| **Preview Address** | *Deploy to get address — see [Deploy Guide](#deploying-the-smart-contract)* |
+| **Preprod Explorer** | [preprod.midnightexplorer.com](https://preprod.midnightexplorer.com) |
+| **Preview Explorer** | [preview.midnightexplorer.com](https://preview.midnightexplorer.com) |
+| **Preprod Node RPC** | `https://rpc.preprod.midnight.network` |
+| **Preview Node RPC** | `https://rpc.preview.midnight.network` |
 
 > ProofPass uses Midnight's zero-knowledge Compact circuits. The `proofpass.compact` contract manages issuer registration, credential commitments, and ZK proof verification — **no student PII ever touches the public ledger**.
+>
+> **Note:** On Midnight, contract addresses are unique per deployment transaction. Run `npm run deploy:preprod` or `npm run deploy:preview` from `contracts/deploy/` to get your real address, then paste it above and into `frontend/.env`.
+
+---
 
 ---
 
@@ -139,14 +144,91 @@ npm run build
 
 ---
 
+## ⛓️ Deploying the Smart Contract
+
+ProofPass includes a full deployment script at [`contracts/deploy/src/deploy.ts`](contracts/deploy/src/deploy.ts).
+
+### Step-by-step: Deploy to Preview or Preprod
+
+**1. Install the Compact compiler**
+```bash
+# Follow official setup guide:
+# https://docs.midnight.network/develop/tutorial/using/env-setup
+compact --version   # verify it works
+```
+
+**2. Compile the contract**
+```bash
+# From project root:
+compact compile contracts/proofpass.compact
+# Generates: contracts/managed-api/  contracts/keys/  contracts/zkir/
+```
+
+**3. Start the Proof Server (separate terminal)**
+```bash
+docker run -p 6300:6300 midnightntwrk/proof-server:latest
+```
+
+**4. Get test tNIGHT tokens**
+| Network | Faucet |
+|---------|--------|
+| Preview | https://faucet.midnight.network/preview |
+| Preprod | https://faucet.midnight.network/preprod |
+
+Install the **Midnight Lace wallet** extension → https://midnight.network/lace  
+Switch the wallet to your target network (Preview or Preprod).
+
+**5. Run the deploy script**
+```bash
+cd contracts/deploy
+npm install
+npm run deploy:preview   # → Preview testnet
+npm run deploy:preprod   # → Preprod testnet
+```
+
+The script will print your **contract address** and the **Midnight Explorer link** on success:
+```
+Contract Address: <YOUR_UNIQUE_CONTRACT_ADDRESS>
+Explorer Link   : https://preprod.midnightexplorer.com/contracts/<YOUR_UNIQUE_CONTRACT_ADDRESS>
+```
+
+**6. Record your contract address**
+```bash
+# Update frontend/.env:
+echo "VITE_CONTRACT_ADDRESS_PREPROD=<YOUR_ADDRESS>" >> frontend/.env
+echo "VITE_CONTRACT_ADDRESS_PREVIEW=<YOUR_ADDRESS>" >> frontend/.env
+```
+
+### Network Reference
+
+| Network | Node RPC | Indexer | Explorer |
+|---------|----------|---------|----------|
+| **Preview** | `https://rpc.preview.midnight.network` | `https://indexer.preview.midnight.network/api/v4/graphql` | [preview.midnightexplorer.com](https://preview.midnightexplorer.com) |
+| **Preprod** | `https://rpc.preprod.midnight.network` | `https://indexer.preprod.midnight.network/api/v4/graphql` | [preprod.midnightexplorer.com](https://preprod.midnightexplorer.com) |
+
+Full tutorial: https://docs.midnight.network/develop/tutorial/building/deploy
+
+---
+
 ## 🚢 Deployment to Vercel
 
-ProofPass is configured for direct **Vercel Preview** and **Production** deployment:
-- **Build Command**: `npm run build:frontend`
-- **Output Directory**: `frontend/dist`
-- **Root Directory**: `.` (or select `frontend/` as root directory)
+ProofPass is configured for **Vercel Preview** and **Production** via root `vercel.json`:
+
+| Setting | Value |
+|---------|-------|
+| **Framework** | Vite |
+| **Install Command** | `npm --prefix frontend install` |
+| **Build Command** | `npm --prefix frontend run build` |
+| **Output Directory** | `frontend/dist` |
+| **SPA Rewrites** | `/* → /index.html` |
+
+**To deploy:**
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import the `mandibbhowmik5-png/ProofPass` GitHub repository
+3. Vercel auto-reads `vercel.json` — click **Deploy**
 
 ---
 
 ## 📄 License
 MIT License. Built for the **Midnight Privacy Blockchain Ecosystem**.
+

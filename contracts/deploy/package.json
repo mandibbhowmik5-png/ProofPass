@@ -1,0 +1,20 @@
+{
+  "name": "proofpass-deploy",
+  "version": "1.0.0",
+  "description": "ProofPass Midnight Smart Contract Deployment Scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy:preview":  "npx tsx src/deploy.ts --network preview",
+    "deploy:preprod":  "npx tsx src/deploy.ts --network preprod"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-contracts":    ">=0.1.0",
+    "@midnight-ntwrk/midnight-js-network-id":   ">=0.1.0",
+    "@midnight-ntwrk/midnight-js-types":        ">=0.1.0"
+  },
+  "devDependencies": {
+    "tsx":        "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
