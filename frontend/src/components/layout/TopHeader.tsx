@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useMidnightWallet } from '../../context/MidnightWalletContext';
 import { NetworkType } from '../../lib/types';
+import { ConnectWalletButton } from '../wallet/ConnectWalletButton';
 
 interface TopHeaderProps {
   onSearchQuery?: (query: string) => void;
@@ -17,14 +18,11 @@ interface TopHeaderProps {
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
   const { 
-    isConnected, 
-    isConnecting, 
-    isDemoMode, 
     address, 
     network, 
     setNetwork, 
-    toggleDemoMode, 
-    connectWallet 
+    isDemoMode,
+    toggleDemoMode 
   } = useMidnightWallet();
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
@@ -122,22 +120,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
             <span className="hidden md:inline">{isDemoMode ? 'Demo Sandbox' : 'Live Midnight'}</span>
           </button>
 
-          {/* Wallet Address / Connect Button */}
-          {isConnected && address ? (
-            <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 bg-[#0A1428] border border-[#1E2E4A] rounded-xl text-xs font-mono text-[#22D3EE]">
-              <div className="w-2 h-2 rounded-full bg-[#4FFFC1] animate-pulse" />
-              <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
-            </div>
-          ) : (
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className="gradient-btn-primary flex items-center space-x-2 px-3.5 py-1.5 text-xs cursor-pointer"
-            >
-              <Wallet className="w-3.5 h-3.5 text-[#050B1A]" />
-              <span>{isConnecting ? 'Connecting...' : 'Connect Midnight'}</span>
-            </button>
-          )}
+          {/* Prominent Official Midnight Connect Wallet Button */}
+          <ConnectWalletButton />
 
           {/* Notification Bell */}
           <button 
@@ -215,7 +199,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
                 <div className="py-2.5 space-y-1">
                   <div className="p-2.5 rounded-xl bg-[#0F1E38]/70 text-[11px] font-mono text-[#94A3B8]">
                     <span className="text-[#F8FAFC] block font-semibold mb-0.5">Midnight Identity:</span>
-                    <span className="text-[#22D3EE] truncate block">{address || 'mn1q98f417e29a39d89c02b1'}</span>
+                    <span className="text-[#22D3EE] truncate block">{address || 'Not connected'}</span>
                   </div>
                 </div>
 

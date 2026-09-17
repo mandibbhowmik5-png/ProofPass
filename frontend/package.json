@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npx tsx test/zkEngine.test.ts"
+    "test": "npx tsx test/zkEngine.test.ts && npx tsx test/walletConnector.test.ts"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "ethers": "^6.17.0",
     "framer-motion": "^12.4.7",
     "html5-qrcode": "^2.3.8",
     "js-sha256": "^0.11.0",

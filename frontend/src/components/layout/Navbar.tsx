@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useMidnightWallet } from '../../context/MidnightWalletContext';
 import { NetworkType } from '../../lib/types';
+import { ConnectWalletButton } from '../wallet/ConnectWalletButton';
 
 interface NavbarProps {
   activeTab: 'issuer' | 'holder' | 'verifier';
@@ -22,16 +23,10 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenZkModal }) => {
   const { 
-    isConnected, 
-    isConnecting, 
-    isDemoMode, 
-    isLaceInstalled,
-    address, 
     network, 
     setNetwork, 
-    toggleDemoMode, 
-    connectWallet, 
-    disconnectWallet 
+    isDemoMode, 
+    toggleDemoMode 
   } = useMidnightWallet();
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
@@ -173,22 +168,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenZ
               <span className="hidden sm:inline">{isDemoMode ? 'Demo Sandbox' : 'Live Midnight'}</span>
             </button>
 
-            {/* Wallet Button */}
-            {isConnected && address ? (
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-midnight-900/90 border border-midnight-700/80 rounded-lg text-xs font-mono text-cyan-300">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
-              </div>
-            ) : (
-              <button
-                onClick={connectWallet}
-                disabled={isConnecting}
-                className="flex items-center space-x-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 rounded-lg shadow-lg shadow-cyan-500/20 transition-all duration-200"
-              >
-                <Wallet className="w-3.5 h-3.5" />
-                <span>{isConnecting ? 'Connecting...' : 'Connect Midnight'}</span>
-              </button>
-            )}
+            {/* Prominent Official Midnight Connect Wallet Button */}
+            <ConnectWalletButton />
 
           </div>
         </div>

@@ -1,104 +1,201 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { NetworkType } from '../lib/types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { 
+  NetworkType, 
+  WalletError, 
+  MidnightConnectedAPI 
+} from '../lib/types';
 import { 
   MIDNIGHT_NETWORKS, 
   MidnightNetworkConfig, 
-  connectMidnightLace, 
-  isMidnightWalletAvailable 
+  PREPROD_CONTRACT_ADDRESS,
+  connectMidnightWallet, 
+  discoverMidnightWallets,
+  isMidnightWalletAvailable,
+  checkWalletConnectionStatus,
+  shortenAddress,
+  parseWalletError 
 } from '../lib/midnight/midnightConnector';
-import { generateRandomSecret } from '../lib/crypto/zkEngine';
 
 interface MidnightWalletContextType {
   isConnected: boolean;
   isConnecting: boolean;
-  isDemoMode: boolean;
-  isLaceInstalled: boolean;
+  isWalletInstalled: boolean;
   address: string | null;
+  shortAddress: string;
   publicKey: string | null;
+  shieldedAddress: string | null;
+  walletName: string | null;
   network: NetworkType;
+  networkName: string;
   networkConfig: MidnightNetworkConfig;
+  contractAddress: string;
+  contractExplorerUrl: string;
+  connectedApi: MidnightConnectedAPI | null;
   balanceTdust: number;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   setNetwork: (network: NetworkType) => void;
+  isDemoMode: boolean;
   toggleDemoMode: () => void;
-  error: string | null;
+  error: WalletError | null;
+  clearError: () => void;
 }
 
 const MidnightWalletContext = createContext<MidnightWalletContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'proofpass_wallet_connected';
+
 export const MidnightWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [network, setNetworkState] = useState<NetworkType>('midnight-preprod');
-  const [isConnected, setIsConnected] = useState<boolean>(true); // Auto-connect simulated wallet for seamless onboarding
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
-  const [isLaceInstalled, setIsLaceInstalled] = useState<boolean>(false);
-  const [address, setAddress] = useState<string | null>('mn1q98f417e29a39d89c02b1f48039d91cb61d84');
-  const [publicKey, setPublicKey] = useState<string | null>('0x04e82b79a1f24d9c87b9e0123456789abcdef0123456789abcdef0123456789a');
-  const [balanceTdust, setBalanceTdust] = useState<number>(4500);
-  const [error, setError] = useState<string | null>(null);
+  const [isWalletInstalled, setIsWalletInstalled] = useState<boolean>(false);
+  const [address, setAddress] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [shieldedAddress, setShieldedAddress] = useState<string | null>(null);
+  const [walletName, setWalletName] = useState<string | null>(null);
+  const [connectedApi, setConnectedApi] = useState<MidnightConnectedAPI | null>(null);
+  const [balanceTdust, setBalanceTdust] = useState<number>(0);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+  const [error, setError] = useState<WalletError | null>(null);
 
+  const currentNetworkConfig = MIDNIGHT_NETWORKS[network];
+  const contractAddress = currentNetworkConfig.contractAddress || PREPROD_CONTRACT_ADDRESS;
+  const contractExplorerUrl = `${currentNetworkConfig.explorerUrl}/contracts/${contractAddress}`;
+
+  // Check if wallet is installed in browser
   useEffect(() => {
-    setIsLaceInstalled(isMidnightWalletAvailable());
+    const checkInstallation = () => {
+      const installed = isMidnightWalletAvailable();
+      setIsWalletInstalled(installed);
+    };
+
+    checkInstallation();
+    // Recheck on window focus or after brief delay in case extension injected after DOM load
+    const timer = setTimeout(checkInstallation, 600);
+    window.addEventListener('focus', checkInstallation);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', checkInstallation);
+    };
   }, []);
 
-  const connectWallet = async () => {
+  // Silent session restoration if user previously connected
+  useEffect(() => {
+    const trySilentReconnect = async () => {
+      const previouslyConnected = localStorage.getItem(STORAGE_KEY) === 'true';
+      if (!previouslyConnected) return;
+
+      const isAuthorized = await checkWalletConnectionStatus();
+      if (isAuthorized) {
+        try {
+          const result = await connectMidnightWallet(network);
+          setAddress(result.address);
+          setPublicKey(result.publicKey);
+          setShieldedAddress(result.shieldedAddress || null);
+          setWalletName(result.walletName);
+          setConnectedApi(result.connectedApi);
+          setIsConnected(true);
+        } catch {
+          // If silent reconnect fails, clear storage
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    };
+
+    trySilentReconnect();
+  }, [network]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const connectWallet = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
+
     try {
-      if (isMidnightWalletAvailable()) {
-        const { address, publicKey } = await connectMidnightLace();
-        setAddress(address);
-        setPublicKey(publicKey);
-        setIsConnected(true);
-        setIsDemoMode(false);
-      } else {
-        // Simulated Midnight Identity fallback
-        const simulatedSecret = generateRandomSecret(16);
-        const simAddress = `mn1q${simulatedSecret}`;
-        const simPk = `0x04${generateRandomSecret(32)}`;
-        setAddress(simAddress);
-        setPublicKey(simPk);
-        setIsConnected(true);
+      const result = await connectMidnightWallet(network);
+      
+      setAddress(result.address);
+      setPublicKey(result.publicKey);
+      setShieldedAddress(result.shieldedAddress || null);
+      setWalletName(result.walletName);
+      setConnectedApi(result.connectedApi);
+      setIsConnected(true);
+      setError(null);
+      localStorage.setItem(STORAGE_KEY, 'true');
+
+      // Fetch balances if available on ConnectedAPI
+      if (typeof result.connectedApi.getShieldedBalances === 'function') {
+        try {
+          const balances = await result.connectedApi.getShieldedBalances();
+          const firstBalance = Object.values(balances)[0];
+          if (firstBalance !== undefined) {
+            setBalanceTdust(Number(firstBalance));
+          }
+        } catch {
+          // Optional balance fetch
+        }
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to connect Midnight wallet');
+      const walletErr: WalletError = err.walletError || parseWalletError(err);
+      setError(walletErr);
+      setIsConnected(false);
+      localStorage.removeItem(STORAGE_KEY);
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [network]);
 
-  const disconnectWallet = () => {
+  const disconnectWallet = useCallback(() => {
     setIsConnected(false);
     setAddress(null);
     setPublicKey(null);
-  };
+    setShieldedAddress(null);
+    setWalletName(null);
+    setConnectedApi(null);
+    setBalanceTdust(0);
+    setError(null);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
-  const setNetwork = (newNetwork: NetworkType) => {
+  const setNetwork = useCallback((newNetwork: NetworkType) => {
     setNetworkState(newNetwork);
-  };
+  }, []);
 
-  const toggleDemoMode = () => {
+  const toggleDemoMode = useCallback(() => {
     setIsDemoMode(prev => !prev);
-  };
+  }, []);
+
+  const shortAddress = shortenAddress(address, 6, 4);
 
   return (
     <MidnightWalletContext.Provider
       value={{
         isConnected,
         isConnecting,
-        isDemoMode,
-        isLaceInstalled,
+        isWalletInstalled,
         address,
+        shortAddress,
         publicKey,
+        shieldedAddress,
+        walletName,
         network,
-        networkConfig: MIDNIGHT_NETWORKS[network],
+        networkName: currentNetworkConfig.name,
+        networkConfig: currentNetworkConfig,
+        contractAddress,
+        contractExplorerUrl,
+        connectedApi,
         balanceTdust,
         connectWallet,
         disconnectWallet,
         setNetwork,
+        isDemoMode,
         toggleDemoMode,
-        error
+        error,
+        clearError
       }}
     >
       {children}
@@ -113,3 +210,4 @@ export const useMidnightWallet = () => {
   }
   return context;
 };
+

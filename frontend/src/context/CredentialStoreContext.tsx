@@ -55,7 +55,7 @@ interface CredentialStoreContextType {
 const CredentialStoreContext = createContext<CredentialStoreContextType | undefined>(undefined);
 
 export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { network } = useMidnightWallet();
+  const { network, connectedApi, address: connectedAddress, publicKey: connectedPk } = useMidnightWallet();
 
   // Load state from localStorage or use initial presets
   const [myCredentials, setMyCredentials] = useState<StudentCredential[]>(() => {
@@ -145,13 +145,13 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
     );
     const issuerSignature = computeIssuerSignature(commitmentHash, 'issuer_secret_key');
 
-    // Submit transaction to Midnight Compact smart contract
+    // Submit transaction to Midnight Compact smart contract using connected wallet
     const tx = await submitMidnightContractTx('issue_credential', {
       commitmentHash,
       issuerPk: issuer.publicKey,
       issuedAt,
       expiresAt: params.expiresAt
-    }, network);
+    }, network, connectedApi);
 
     const newCredential: StudentCredential = {
       id: 'cred-' + generateRandomSecret(6),
@@ -191,7 +191,7 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   };
 
   const revokeCredential = async (commitmentHash: string) => {
-    await submitMidnightContractTx('revoke_credential', { commitmentHash }, network);
+    await submitMidnightContractTx('revoke_credential', { commitmentHash }, network, connectedApi);
     
     setOnChainCommitments(prev => {
       if (!prev[commitmentHash]) return prev;
@@ -209,8 +209,8 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   };
 
   const registerNewIssuer = async (name: string, domain: string, tier: AccreditationTier, country: string): Promise<IssuerOrganization> => {
-    const pk = `0x04${generateRandomSecret(32)}`;
-    const tx = await submitMidnightContractTx('register_issuer', { name, tier, pk }, network);
+    const pk = connectedPk || connectedAddress || `0x04${generateRandomSecret(32)}`;
+    const tx = await submitMidnightContractTx('register_issuer', { name, tier, pk }, network, connectedApi);
     
     const newIssuer: IssuerOrganization = {
       id: 'org-' + generateRandomSecret(4),

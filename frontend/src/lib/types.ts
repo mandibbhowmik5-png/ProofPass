@@ -112,3 +112,57 @@ export interface VerificationResult {
   };
   proofPayload?: ZKProofPayload;
 }
+
+export type WalletErrorCode = 
+  | 'WALLET_NOT_INSTALLED'
+  | 'USER_REJECTED'
+  | 'WRONG_NETWORK'
+  | 'CONNECTION_FAILED'
+  | 'TRANSACTION_ERROR'
+  | 'UNAUTHORIZED';
+
+export interface WalletError {
+  code: WalletErrorCode;
+  message: string;
+  details?: string;
+}
+
+export interface MidnightShieldedAddresses {
+  shieldedAddress: string;
+  shieldedCoinPublicKey?: string;
+  shieldedEncryptionPublicKey?: string;
+}
+
+export interface MidnightWalletInfo {
+  name: string;
+  icon?: string;
+  rdns?: string;
+  apiVersion?: string;
+}
+
+export interface MidnightConnectedAPI {
+  getUnshieldedAddress: () => Promise<string | { unshieldedAddress: string }>;
+  getShieldedAddresses?: () => Promise<MidnightShieldedAddresses>;
+  getShieldedBalances?: () => Promise<Record<string, bigint | number>>;
+  getUnshieldedBalances?: () => Promise<Record<string, bigint | number>>;
+  getConnectionStatus?: () => Promise<boolean>;
+  balanceUnsealedTransaction?: (tx: any) => Promise<any>;
+  balanceSealedTransaction?: (tx: any) => Promise<any>;
+  submitTransaction?: (tx: any) => Promise<string>;
+  serviceUriConfig?: () => Promise<{ indexerUri?: string; proverServerUri?: string; nodeUri?: string }>;
+  // Fallbacks for various SDK/extension versions
+  state?: () => Promise<{ address: string; coinPublicKey?: string; encryptionPublicKey?: string }>;
+  getPublicKey?: () => Promise<string>;
+}
+
+export interface MidnightInitialAPI {
+  name?: string;
+  icon?: string;
+  rdns?: string;
+  apiVersion?: string;
+  connect: (networkId: string) => Promise<MidnightConnectedAPI>;
+  getConnectionStatus?: () => Promise<boolean>;
+  // Legacy fallback
+  enable?: () => Promise<MidnightConnectedAPI>;
+  isEnabled?: () => Promise<boolean>;
+}

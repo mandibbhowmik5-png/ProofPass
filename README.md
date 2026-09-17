@@ -24,16 +24,16 @@
 | **Language** | Compact (Midnight ZK-SNARK DSL) |
 | **Source** | [`contracts/proofpass.compact`](contracts/proofpass.compact) |
 | **Deploy Script** | [`contracts/deploy/src/deploy.ts`](contracts/deploy/src/deploy.ts) |
-| **Preprod Address** | *Deploy to get address — see [Deploy Guide](#deploying-the-smart-contract)* |
-| **Preview Address** | *Deploy to get address — see [Deploy Guide](#deploying-the-smart-contract)* |
-| **Preprod Explorer** | [preprod.midnightexplorer.com](https://preprod.midnightexplorer.com) |
+| **Preprod Address** | [`5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e`](https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e) |
+| **Preview Address** | `39d91cb61d84f9324ad72518e3c6902fa874c93f98f417e29a39d89c02b1f480` |
+| **Preprod Explorer** | [preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e](https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e) |
 | **Preview Explorer** | [preview.midnightexplorer.com](https://preview.midnightexplorer.com) |
 | **Preprod Node RPC** | `https://rpc.preprod.midnight.network` |
+| **Preprod Indexer** | `https://indexer.preprod.midnight.network/api/v1/graphql` |
 | **Preview Node RPC** | `https://rpc.preview.midnight.network` |
 
 > ProofPass uses Midnight's zero-knowledge Compact circuits. The `proofpass.compact` contract manages issuer registration, credential commitments, and ZK proof verification — **no student PII ever touches the public ledger**.
->
-> **Note:** On Midnight, contract addresses are unique per deployment transaction. Run `npm run deploy:preprod` or `npm run deploy:preview` from `contracts/deploy/` to get your real address, then paste it above and into `frontend/.env`.
+
 
 ---
 
@@ -144,7 +144,60 @@ npm run build
 
 ---
 
-## ⛓️ Deploying the Smart Contract
+## 👛 Midnight Wallet & Preprod Setup
+
+ProofPass integrates directly with the official **Midnight DApp Connector API** (`window.midnight`), enabling secure, privacy-preserving credential issuance, holding, and verification on the **Midnight Preprod** network without ever exposing or requesting private keys or recovery phrases.
+
+### 1. Install Midnight Lace Wallet
+1. Download the official **Midnight Lace Wallet** extension:
+   👉 **[https://midnight.network/lace](https://midnight.network/lace)**
+2. Create or restore your Midnight wallet account and safely back up your seed phrase.
+3. Open the wallet extension settings and switch the active network to **Midnight Preprod**.
+
+### 2. Fund Your Preprod Wallet
+Obtain test tokens to pay for transaction fees (DUST) and smart contract operations:
+- **Preprod Faucet**: [https://faucet.midnight.network/preprod](https://faucet.midnight.network/preprod)
+- Paste your wallet's Bech32m address (starts with `mn1...`) and request test `tNIGHT`.
+
+### 3. Connect Wallet in ProofPass
+- **Before Connection**: Click the prominent **“Connect Wallet”** button in the top navigation bar.
+- **Authorization**: Midnight Lace prompts for authorization. Select your account and approve the connection for `preprod`.
+- **Connected Status**:
+  - The button turns into a live status pill showing a green pulsing indicator and your shortened address (e.g. `mn1q98...1d84`).
+  - Clicking the pill opens a detailed dropdown showing:
+    - **Wallet Address**: Full Bech32m address with a one-click **Copy** button.
+    - **Network**: `Midnight Preprod` with real-time connectivity status.
+    - **Deployed Contract**: `5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e` with a direct link to the **Midnight Explorer**.
+    - **Disconnect Wallet**: One-click session reset.
+
+### 4. Environment Variables (`frontend/.env`)
+Configure your local environment with the deployed Preprod contract:
+
+```env
+# Midnight Preprod Network Configuration
+VITE_MIDNIGHT_NETWORK_ID=midnight-preprod
+VITE_NETWORK_ID=preprod
+VITE_INDEXER_URI=https://indexer.preprod.midnight.network/api/v1/graphql
+VITE_PROVER_SERVER_URI=https://prover.preprod.midnight.network
+VITE_NODE_URI=https://rpc.preprod.midnight.network
+VITE_CONTRACT_ADDRESS=5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e
+VITE_CONTRACT_ADDRESS_PREPROD=5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e
+VITE_EXPLORER_URI=https://preprod.midnightexplorer.com
+VITE_APP_MODE=live
+```
+
+### 5. Troubleshooting Guide
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **Wallet Not Detected** | Midnight Lace is not installed or enabled in browser. | Install from [midnight.network/lace](https://midnight.network/lace) and refresh the page. |
+| **Connection Rejected** | User clicked "Cancel" or closed the wallet popup. | Click "Connect Wallet" again and approve permissions in the extension prompt. |
+| **Wrong Network** | Wallet is connected to Preview or Local devnet. | Open Midnight Lace, open network settings, and select **Midnight Preprod**. |
+| **Wallet Locked** | The extension has locked due to inactivity. | Open the Midnight Lace popup in your browser, enter your password, and retry. |
+| **No Address Returned** | No account created or selected in Lace. | Create or select an active account inside the Lace wallet extension. |
+
+---
+
 
 ProofPass includes a full deployment script at [`contracts/deploy/src/deploy.ts`](contracts/deploy/src/deploy.ts).
 

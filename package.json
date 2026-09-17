@@ -24,5 +24,10 @@
     "privacy"
   ],
   "author": "ProofPass Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "dotenv": "^17.4.2",
+    "hardhat": "^2.29.1"
+  }
 }
