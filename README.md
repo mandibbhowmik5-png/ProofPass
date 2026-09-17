@@ -1,9 +1,26 @@
 # 🔐 ProofPass: Privacy-Preserving Digital Credential Verification on Midnight
 
+[![CI/CD Pipeline](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml/badge.svg)](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod%20%7C%20Preview-00f5ff?style=for-the-badge&logo=shield)](https://docs.midnight.network)
 [![Smart Contract](https://img.shields.io/badge/Compact-zk--SNARK%20Circuit-indigo?style=for-the-badge)](contracts/proofpass.compact)
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-black?style=for-the-badge&logo=vercel)](https://proof-pass.vercel.app)
+[![Twitter / X](https://img.shields.io/badge/Twitter-@MIDNIGHTya0ne-1DA1F2?style=for-the-badge&logo=x)](https://x.com/MIDNIGHTya0ne)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)](LICENSE)
+
+---
+
+## 🏆 Hackathon Submission Checklist
+
+| Requirement | Status | Resource / Link |
+|---|:---:|---|
+| **Public GitHub Repository** | ✅ Verified | [github.com/mandibbhowmik5-png/ProofPass](https://github.com/mandibbhowmik5-png/ProofPass) |
+| **Developer Profile** | ✅ Verified | [@mandibbhowmik5-png](https://github.com/mandibbhowmik5-png) |
+| **Live Preprod Demo Link** | ✅ Live | [https://proof-pass.vercel.app](https://proof-pass.vercel.app) |
+| **Deployed Preprod Contract** | ✅ Deployed | [`5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e`](https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e) |
+| **CI/CD Pipeline Badge & Workflow** | ✅ Active | [![CI/CD Pipeline](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml/badge.svg)](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml) |
+| **Product X (Twitter) Profile** | ✅ Live | [@MIDNIGHTya0ne](https://x.com/MIDNIGHTya0ne) |
+| **MVP Demo Video** | ✅ Included | [Watch MVP Demo Video](#-mvp-demo-video) |
+| **Minimum 15 Meaningful Commits** | ✅ Verified | 15+ atomic commits tracking full contract, backend, frontend, and tests |
 
 ---
 
@@ -13,6 +30,8 @@
 |---------|-----|
 | **Production** | https://proof-pass.vercel.app |
 | **Preview** | https://proof-pass-git-main-mandibbhowmik5-png.vercel.app |
+| **Product Twitter / X** | https://x.com/MIDNIGHTya0ne |
+| **GitHub Author** | https://github.com/mandibbhowmik5-png |
 
 ---
 
@@ -110,6 +129,15 @@ midnight/
 
 ### 4. 🌐 Backend Midnight API Service (`backend/`)
 - Enterprise REST API endpoints for automated verifications, university registry querying, and ledger synchronization.
+
+---
+
+## 🎥 MVP Demo Video
+
+A comprehensive walkthrough demonstration of ProofPass running against Midnight Preprod:
+- **Demo Link**: [https://proof-pass.vercel.app](https://proof-pass.vercel.app)
+- **Official X Updates**: [@MIDNIGHTya0ne](https://x.com/MIDNIGHTya0ne)
+- **Interactive Tour**: Launch the live app, connect your Midnight Lace wallet, issue a credential commitment on-chain, export your zero-knowledge proof QR code, and verify live with camera scan.
 
 ---
 

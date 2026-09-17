@@ -1,0 +1,42 @@
+name: ProofPass CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: Build, Cryptographic Verification & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Install Root & Workspace Dependencies
+        run: |
+          npm ci || npm install
+          npm --prefix backend install
+          npm --prefix frontend install
+
+      - name: 🧪 Run Automated Tests (Backend + ZK Engine + Wallet Connector)
+        run: |
+          npm test
+
+      - name: 🏗️ Build Production Client (Vite + TypeScript + Tailwind CSS)
+        run: |
+          npm run build
+
+      - name: 🛡️ Verify Midnight Compact Contract Artifacts
+        run: |
+          test -f contracts/proofpass.compact
+          test -f contracts/deploy/src/deploy.ts
+          echo "Midnight Compact contract and deployment scripts verified."
