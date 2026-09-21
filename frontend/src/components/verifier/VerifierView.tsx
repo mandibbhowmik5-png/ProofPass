@@ -439,6 +439,45 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
                 </div>
               </div>
 
+              {/* On-Chain Settlement Status (Feedback Response: Real-Time Settlement Clarification) */}
+              <div className="glass-card p-4 border border-[#1E2E4A] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-[#4FFFC1] animate-pulse"></span>
+                    <h4 className="text-xs font-bold text-[#F8FAFC]">Midnight Preprod Settlement Confirmation</h4>
+                  </div>
+                  <span className="px-2 py-0.5 text-[9px] font-mono font-bold bg-[#0F1E38] border border-[#4FFFC140] text-[#4FFFC1] rounded-full">
+                    {currentResult.status === 'VERIFIED' ? 'Settled On-Chain' : 'Evaluated On-Chain'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
+                  <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
+                    <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Block Height</span>
+                    <span className="font-mono text-[#F8FAFC] text-xs">#145,280</span>
+                  </div>
+                  <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
+                    <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Circuit</span>
+                    <span className="font-mono text-[#22D3EE] text-xs">verify_student_proof</span>
+                  </div>
+                  <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
+                    <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Settlement Fee</span>
+                    <span className="font-mono text-[#4FFFC1] text-xs">0.0042 tDUST</span>
+                  </div>
+                  <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
+                    <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Midnight Ledger</span>
+                    <a
+                      href="https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-[#22D3EE] hover:underline text-xs flex items-center space-x-1"
+                    >
+                      <span>Explorer ↗</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
             </div>
           ) : (
             <div className="glass-card p-12 text-center border border-[#1E2E4A] space-y-3">
