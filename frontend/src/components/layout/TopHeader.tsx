@@ -6,7 +6,12 @@ import {
   Sparkles, 
   Wallet, 
   Bell, 
-  CheckCircle2 
+  CheckCircle2,
+  Settings2,
+  Check,
+  ExternalLink,
+  ShieldCheck,
+  Activity
 } from 'lucide-react';
 import { useMidnightWallet } from '../../context/MidnightWalletContext';
 import { NetworkType } from '../../lib/types';
@@ -27,6 +32,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [alertPreferences, setAlertPreferences] = useState({
+    settlements: true,
+    verifications: true,
+    circuitNullifiers: true
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
   const networks: { id: NetworkType; label: string; tag: string }[] = [
@@ -123,14 +134,119 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
           {/* Prominent Official Midnight Connect Wallet Button */}
           <ConnectWalletButton />
 
-          {/* Notification Bell */}
-          <button 
-            className="relative p-2 bg-[#0A1428] hover:bg-[#0F1E38] border border-[#1E2E4A] hover:border-[#22D3EE50] rounded-xl text-[#94A3B8] hover:text-[#F8FAFC] transition-all"
-            title="ZK Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#22D3EE] rounded-full border-2 border-[#050B1A] animate-pulse"></span>
-          </button>
+          {/* Interactive Notification Center (Feedback Response: Custom Alerts & Settlements) */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              className={`relative p-2 rounded-xl border transition-all ${
+                isNotificationOpen 
+                  ? 'bg-[#0F1E38] border-[#22D3EE] text-[#22D3EE]' 
+                  : 'bg-[#0A1428] hover:bg-[#0F1E38] border-[#1E2E4A] hover:border-[#22D3EE50] text-[#94A3B8] hover:text-[#F8FAFC]'
+              }`}
+              title="Midnight Preprod Alerts & Notification Preferences"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#22D3EE] rounded-full border-2 border-[#050B1A] animate-pulse"></span>
+            </button>
+
+            {isNotificationOpen && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 p-4 bg-[#0A1428]/95 border border-[#1E2E4A] rounded-2xl shadow-2xl backdrop-blur-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-slate-300">
+                <div className="flex items-center justify-between pb-3 border-b border-[#1E2E4A]">
+                  <div className="flex items-center space-x-2">
+                    <Activity className="w-4 h-4 text-[#22D3EE]" />
+                    <span className="text-xs font-bold text-[#F8FAFC]">Settlements & Alerts</span>
+                  </div>
+                  <span className="px-2 py-0.5 text-[9px] font-mono rounded-full bg-[#0F1E38] border border-[#22D3EE40] text-[#22D3EE]">
+                    Preprod Live
+                  </span>
+                </div>
+
+                {/* Settlement Activity Stream */}
+                <div className="py-3 space-y-2.5">
+                  <div className="text-[10px] uppercase font-bold text-[#94A3B8] tracking-wider">
+                    Recent Midnight Settlements
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl flex items-start space-x-2.5 text-xs">
+                      <ShieldCheck className="w-4 h-4 text-[#4FFFC1] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[#F8FAFC] text-[11px] truncate">
+                          Student Proof Verification Settled
+                        </div>
+                        <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
+                          <span>Block #145,280 • verify_student_proof</span>
+                          <span className="text-[#4FFFC1] font-mono">0.0042 tDUST</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl flex items-start space-x-2.5 text-xs">
+                      <Check className="w-4 h-4 text-[#22D3EE] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[#F8FAFC] text-[11px] truncate">
+                          MIT Credential Commitment Recorded
+                        </div>
+                        <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
+                          <span>Block #145,210 • issue_credential</span>
+                          <span className="text-[#22D3EE] font-mono">Confirmed</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Custom Alert Preferences (Requested by Sampad De & Debasmit Bose) */}
+                  <div className="pt-2 border-t border-[#1E2E4A] space-y-2">
+                    <div className="flex items-center justify-between text-[10px] uppercase font-bold text-[#94A3B8] tracking-wider">
+                      <span>Custom Alert Preferences</span>
+                      <Settings2 className="w-3 h-3 text-[#22D3EE]" />
+                    </div>
+
+                    <div className="space-y-1.5 text-[11px]">
+                      <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-[#0F1E38]/50 cursor-pointer">
+                        <span className="text-slate-300">On-Chain Settlement Alerts</span>
+                        <input
+                          type="checkbox"
+                          checked={alertPreferences.settlements}
+                          onChange={(e) => setAlertPreferences(prev => ({ ...prev, settlements: e.target.checked }))}
+                          className="rounded border-[#1E2E4A] text-[#22D3EE] focus:ring-[#22D3EE]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-[#0F1E38]/50 cursor-pointer">
+                        <span className="text-slate-300">Instant Verification Verdicts</span>
+                        <input
+                          type="checkbox"
+                          checked={alertPreferences.verifications}
+                          onChange={(e) => setAlertPreferences(prev => ({ ...prev, verifications: e.target.checked }))}
+                          className="rounded border-[#1E2E4A] text-[#22D3EE] focus:ring-[#22D3EE]"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2.5 border-t border-[#1E2E4A] flex items-center justify-between text-[10px] text-[#94A3B8]">
+                  <a
+                    href="https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#22D3EE] hover:underline flex items-center space-x-1"
+                  >
+                    <span>Explorer Contract Feed</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <button 
+                    onClick={() => setIsNotificationOpen(false)}
+                    className="hover:text-white transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
 
           {/* Top Right Profile Picture / Identity Badge */}
           <div className="relative">
