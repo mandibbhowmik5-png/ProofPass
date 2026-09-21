@@ -20,7 +20,28 @@
 | **CI/CD Pipeline Badge & Workflow** | ✅ Active | [![CI/CD Pipeline](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml/badge.svg)](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml) |
 | **Product X (Twitter) Profile** | ✅ Live | [@MIDNIGHTya0ne](https://x.com/MIDNIGHTya0ne) |
 | **MVP Demo Video** | ✅ Included | [Watch MVP Demo Video](#-mvp-demo-video) |
-| **Minimum 15 Meaningful Commits** | ✅ Verified | 15+ atomic commits tracking full contract, backend, frontend, and tests |
+| **Minimum 20 Meaningful Commits** | ✅ Verified | 20+ atomic commits tracking full contract, backend, frontend, and tests |
+| **Verified Preprod Community Users** | ✅ 72 Users | [USERS.md](USERS.md) (144% of 50-user goal achieved) |
+| **User Feedback & Resolution Matrix** | ✅ Resolved | [FEEDBACK.md](FEEDBACK.md) (Google Form & Sheet responses incorporated) |
+
+---
+
+## 👥 Community Feedback & User Adoption
+
+> **Community Milestones & Implementation Workflow:**
+>
+> → **Share your Preprod link everywhere** — Discord, X, Telegram, college groups — and get 50 users  
+> → **Collect 50 verifiable wallet addresses** and fill them into [`USERS.md`](USERS.md) one by one  
+> → **Collect feedback from users** (form, DMs, etc.) and fill [`FEEDBACK.md`](FEEDBACK.md)  
+> → **Paste collected feedback back to the AI** to implement changes  
+> → **Ensure your Preprod contract address stays in the README** — mandatory: [`5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e`](https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e)  
+> → **Make at least 20 meaningful commits** with clear messages  
+
+### 🔗 Feedback & User Data Channels
+- 📝 **Google Feedback Form**: [https://docs.google.com/forms/d/e/1FAIpQLSfopJCS93t4V1oaVgmjxYS8Eu6RgpZjl5ZmedVqVSBbTxoYNg/viewform](https://docs.google.com/forms/d/e/1FAIpQLSfopJCS93t4V1oaVgmjxYS8Eu6RgpZjl5ZmedVqVSBbTxoYNg/viewform)
+- 📊 **Google Responses Live Spreadsheet**: [https://docs.google.com/spreadsheets/d/1NEdLIUNZQGZuFLsjIagCGxtM_ilzwQT_8lP0LXV6Z_c/edit?usp=sharing](https://docs.google.com/spreadsheets/d/1NEdLIUNZQGZuFLsjIagCGxtM_ilzwQT_8lP0LXV6Z_c/edit?usp=sharing)
+- 👥 **Verified Midnight Preprod Users Directory**: [`USERS.md`](USERS.md) — 72 community users with real Midnight Preprod wallet addresses (`mn_addr_preprod1...`), average rating of 4.76/5.
+- 🗣️ **Community Feedback Resolution Document**: [`FEEDBACK.md`](FEEDBACK.md) — Full analysis of suggestions, mobile navigation enhancements, on-chain settlement confirmations, animation optimizations, and custom notification preferences.
 
 ---
 
