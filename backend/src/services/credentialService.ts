@@ -69,12 +69,12 @@ export class CredentialService {
   }
 
   public registerIssuer(name: string, domain: string, tier: AccreditationTier, country: string): IssuerOrganization {
-    const randomHex = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-    const publicKey = `0x04${randomHex.slice(0, 62)}`;
-    const txHash = `0x${randomHex}`;
+    const derivedKey = sha256(`midnight:issuer:key:${domain}:${name}`);
+    const publicKey = `0x04${derivedKey}`;
+    const txHash = `0x${sha256(`midnight:tx:register:${publicKey}:${Date.now()}`)}`;
 
     const newIssuer: IssuerOrganization = {
-      id: `org-${Math.random().toString(36).substring(2, 7)}`,
+      id: `org-${sha256(domain || name).slice(0, 8)}`,
       name,
       domain,
       publicKey,
@@ -103,7 +103,7 @@ export class CredentialService {
     if (!issuer) throw new Error('Issuing organization is not registered on Midnight');
     if (issuer.status !== 'ACTIVE') throw new Error('Issuer organization is suspended');
 
-    const txHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    const txHash = '0x' + sha256(`midnight:tx:issue:${commitmentHash}:${issuerPk}:${Date.now()}`);
 
     const record: CredentialCommitmentRecord = {
       commitmentHash,
