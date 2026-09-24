@@ -27,6 +27,9 @@ export struct CredentialMetadata {
 
 // Public ledger state stored on Midnight blockchain
 export ledger {
+  // Governance / Platform admin public key
+  admin: Bytes<32>;
+
   // Mapping of registered University / Educational Issuer public keys to details
   issuers: Map<Bytes<32>, IssuerInfo>;
 
@@ -40,18 +43,24 @@ export ledger {
   total_verified_count: Counter;
 }
 
-// Private witnesses provided off-chain by the prover (Student Holder / Issuer)
-witness local_secret_key(): Bytes<32>;
+// Private witnesses provided off-chain by the prover (Student Holder / Issuer / Admin)
+witness admin_secret_key(): Bytes<32>;
+witness issuer_secret_key(): Bytes<32>;
 witness student_secret_salt(): Bytes<32>;
 witness student_id_hash(): Bytes<32>;
-witness student_birth_year(): Uint<16>;
-witness university_pk(): Bytes<32>;
+witness student_secret_key(): Bytes<32>;
+
+constructor(admin_pk: Bytes<32>) {
+  admin = admin_pk;
+}
 
 /**
  * Register an educational institution as a trusted credential issuer on Midnight.
+ * Requires admin cryptographic authorization.
  * @param issuer_pk Public key hash of the university/college
  * @param name_hash Hash of the institution's official legal name
  * @param accreditation_tier Tier 1 (Accredited University), Tier 2 (College), Tier 3 (Bootcamp)
+ * @param timestamp Registration timestamp
  */
 export circuit register_issuer(
   issuer_pk: Bytes<32>,
@@ -59,11 +68,16 @@ export circuit register_issuer(
   accreditation_tier: Uint<8>,
   timestamp: Uint<64>
 ): Void {
-  // Assert valid tier (1-3)
+  // 1. Cryptographic admin authorization check
+  const admin_sk = admin_secret_key();
+  const derived_admin = persistent_hash<Bytes<32>>(admin_sk);
+  assert derived_admin == admin "Unauthorized: only ProofPass contract admin can register issuers";
+
+  // 2. Assert valid accreditation tier (1-3)
   assert accreditation_tier >= 1 && accreditation_tier <= 3
     "Invalid accreditation tier";
 
-  // Check issuer not already registered or revoked
+  // 3. Check issuer not already registered
   const existing = issuers.member(issuer_pk);
   assert !existing "Issuer already registered on Midnight ledger";
 
@@ -77,9 +91,10 @@ export circuit register_issuer(
 
 /**
  * Issue a tamper-proof credential commitment on Midnight.
+ * Requires issuer cryptographic authorization.
  * The raw student PII stays strictly off-chain; only the cryptographic commitment is recorded.
- * @param commitment_hash Hash(student_id_hash + student_secret_salt + issuer_pk + expiry)
- * @param issuer_pk Issuer public key (must be registered)
+ * @param commitment_hash Hash(student_id_hash + student_secret_salt)
+ * @param issuer_pk Issuer public key (must match derived private key)
  * @param issued_at Timestamp of issuance
  * @param expires_at Expiration timestamp
  */
@@ -89,7 +104,12 @@ export circuit issue_credential(
   issued_at: Uint<64>,
   expires_at: Uint<64>
 ): Void {
-  // Verify issuer is registered and in ACTIVE status
+  // 1. Cryptographic issuer authorization check
+  const issuer_sk = issuer_secret_key();
+  const derived_issuer = persistent_hash<Bytes<32>>(issuer_sk);
+  assert derived_issuer == issuer_pk "Unauthorized: caller does not hold issuer private key";
+
+  // 2. Verify issuer is registered and in ACTIVE status
   assert issuers.member(issuer_pk) "Issuer is not registered on Midnight";
   const issuer_info = issuers.lookup(issuer_pk);
   assert issuer_info.status == IssuerStatus.ACTIVE "Issuer is not in active standing";
@@ -107,12 +127,12 @@ export circuit issue_credential(
 
 /**
  * Privacy-Preserving Proof Verification Circuit.
- * The student generates a zk-SNARK proof that proves:
- * 1. They possess a valid preimage (secret salt, student ID hash) corresponding to an on-chain commitment.
- * 2. The credential has not expired relative to current_timestamp.
- * 3. The issuing university is active and meets the required accreditation tier.
- * 4. Generates a one-time nullifier to prevent double-spending or replay if required,
- * WITHOUT revealing student ID, full name, birth year, or exact student secret.
+ * Binds private witnesses to prove knowledge of credential preimage in zero-knowledge.
+ * Consumes the proof nullifier on-chain to strictly prevent replay attacks.
+ * @param commitment_hash On-chain commitment hash
+ * @param proof_nullifier Unique nullifier derived from secret salt + secret key
+ * @param current_timestamp Verification timestamp
+ * @param min_accreditation_tier Minimum required accreditation tier
  */
 export circuit verify_student_proof(
   commitment_hash: Bytes<32>,
@@ -120,24 +140,38 @@ export circuit verify_student_proof(
   current_timestamp: Uint<64>,
   min_accreditation_tier: Uint<8>
 ): Boolean {
-  // 1. Check commitment exists on-chain
+  // 1. Bind private witnesses into circuit
+  const salt = student_secret_salt();
+  const id_h = student_id_hash();
+  const sec_key = student_secret_key();
+
+  // 2. Prove knowledge of credential preimage in zero-knowledge
+  const computed_commitment = persistent_hash<Vector<2, Bytes<32>>>([id_h, salt]);
+  assert computed_commitment == commitment_hash "ZK proof failed: preimage does not match commitment";
+
+  // 3. Derive and verify one-time proof nullifier
+  const computed_nullifier = persistent_hash<Vector<2, Bytes<32>>>([salt, sec_key]);
+  assert computed_nullifier == proof_nullifier "ZK proof failed: invalid nullifier derivation";
+
+  // 4. Consume nullifier on-chain to prevent double-spending or replay attacks
+  assert !revoked_nullifiers.member(proof_nullifier) "Proof nullifier has already been spent or revoked";
+  revoked_nullifiers.insert(proof_nullifier);
+
+  // 5. Check commitment exists on-chain
   assert commitments.member(commitment_hash) "Credential commitment not found on-chain";
   const metadata = commitments.lookup(commitment_hash);
 
-  // 2. Check not revoked
+  // 6. Check revocation and expiration
   assert !metadata.is_revoked "Credential has been revoked by issuer";
-  assert !revoked_nullifiers.member(proof_nullifier) "Proof nullifier has been invalidated or spent";
-
-  // 3. Verify non-expiration predicate in zero-knowledge
   assert metadata.expires_at > current_timestamp "Credential has expired";
 
-  // 4. Verify issuer authority tier
+  // 7. Verify issuer authority standing and accreditation
   assert issuers.member(metadata.issuer_pk) "Issuing authority is not recognized";
   const issuer_info = issuers.lookup(metadata.issuer_pk);
   assert issuer_info.status == IssuerStatus.ACTIVE "Issuing authority is suspended";
   assert issuer_info.accreditation_tier <= min_accreditation_tier "Issuer accreditation tier is insufficient";
 
-  // 5. Increment verified count on-chain
+  // 8. Public counter increment
   total_verified_count.increment(1);
 
   return true;
@@ -145,15 +179,21 @@ export circuit verify_student_proof(
 
 /**
  * Revoke a student credential or invalidate a compromised nullifier.
+ * Requires issuer or admin authorization.
  */
 export circuit revoke_credential(
   commitment_hash: Bytes<32>,
   nullifier: Bytes<32>
 ): Void {
   assert commitments.member(commitment_hash) "Commitment not found";
-  
-  // Mark revoked on-chain
+
+  // Caller authorization: must be either the issuer who created it or admin
+  const sk = issuer_secret_key();
+  const caller_pk = persistent_hash<Bytes<32>>(sk);
   const meta = commitments.lookup(commitment_hash);
+  assert caller_pk == meta.issuer_pk || caller_pk == admin "Unauthorized to revoke credential";
+
+  // Mark revoked on-chain
   commitments.insert(commitment_hash, CredentialMetadata {
     issuer_pk: meta.issuer_pk,
     issued_at: meta.issued_at,
