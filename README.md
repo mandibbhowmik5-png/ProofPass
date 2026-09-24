@@ -74,8 +74,20 @@
 
 > ProofPass uses Midnight's zero-knowledge Compact circuits. The `proofpass.compact` contract manages issuer registration, credential commitments, and ZK proof verification — **no student PII ever touches the public ledger**.
 
+### ⚡ Compact Circuits & Generated TypeScript Bindings
 
----
+| Circuit | Method Binding | Purpose | Authorization & Witnesses |
+|---------|----------------|---------|---------------------------|
+| `register_issuer` | `callTx.register_issuer(...)` | Registers accredited university authorities on Midnight | Admin cryptographic authorization (`admin_secret_key`) |
+| `issue_credential` | `callTx.issue_credential(...)` | Records zero-knowledge credential commitments on-chain | Issuer cryptographic authorization (`issuer_secret_key`) |
+| `verify_student_proof` | `callTx.verify_student_proof(...)` | Verifies ZK proof, checks accreditation & consumes nullifier | Private witnesses: `student_secret_salt`, `student_id_hash`, `student_secret_key` |
+| `revoke_credential` | `callTx.revoke_credential(...)` | Invalidates revoked credentials or compromised keys | Issuer or Admin authorization |
+
+- **Official Midnight SDK Integration**: Genuine `deployContract()` and `findDeployedContract()` using Midnight Providers (`proofServer`, `indexer`, `node`).
+- **Midnight Proving Provider**: zk-SNARK proof generation via Midnight Proof Server (`midnightntwrk/proof-server:latest`).
+- **Private Witness Bindings**: Circuit demonstrates knowledge of credential preimage (`Hash(student_id_hash + secret_salt) == commitment`) without exposing student identity.
+- **On-Chain Nullifier Consumption**: `verify_student_proof` inserts the derived nullifier into `revoked_nullifiers` on-chain, preventing double-spend replay attacks.
+- **Midnight Indexer Client**: Public ledger state (issuers, commitments, nullifiers, block height) is queried live from the Midnight GraphQL Indexer.
 
 ---
 

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npx tsx test/zkEngine.test.ts && npx tsx test/walletConnector.test.ts && npx tsx test/communityWallets.test.ts"
+    "test": "npx tsx test/zkEngine.test.ts && npx tsx test/walletConnector.test.ts && npx tsx test/communityWallets.test.ts && npx tsx test/compactContract.test.ts"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",

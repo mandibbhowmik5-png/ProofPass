@@ -27,7 +27,15 @@ jobs:
           npm --prefix backend install
           npm --prefix frontend install
 
-      - name: 🧪 Run Automated Tests (Backend + ZK Engine + Wallet Connector)
+      - name: 🔨 Compile Midnight Compact Smart Contract & Generate Bindings
+        run: |
+          npm run compile:compact
+          test -f contracts/managed/proofpass/contract/index.ts
+          test -f contracts/managed/proofpass/contract/proofpass.zkir.json
+          test -f frontend/src/contracts/proofpass/index.ts
+          echo "Compact contract compilation and bindings generation verified."
+
+      - name: 🧪 Run Automated Tests (Backend + ZK Engine + Wallet + Compact Contract)
         run: |
           npm test
 
@@ -35,7 +43,7 @@ jobs:
         run: |
           npm run build
 
-      - name: 🛡️ Verify Midnight Compact Contract Artifacts
+      - name: 🛡️ Verify Midnight Deployment Artifacts
         run: |
           test -f contracts/proofpass.compact
           test -f contracts/deploy/src/deploy.ts
