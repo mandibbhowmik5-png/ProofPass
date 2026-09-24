@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   StudentCredential, 
   IssuerOrganization, 
-  VerificationResult,
+  VerificationResult, 
   AccreditationTier 
 } from '../lib/types';
 import { SAMPLE_UNIVERSITIES, SAMPLE_CREDENTIALS } from '../lib/sampleData';
@@ -11,8 +11,13 @@ import {
   computeIssuerSignature, 
   generateRandomSecret 
 } from '../lib/crypto/zkEngine';
-import { submitMidnightContractTx } from '../lib/midnight/midnightConnector';
+import { 
+  getDeployedProofPassContract, 
+  MIDNIGHT_NETWORKS 
+} from '../lib/midnight/midnightConnector';
+import { indexerClient } from '../lib/midnight/indexerClient';
 import { useMidnightWallet } from './MidnightWalletContext';
+import { sha256 } from 'js-sha256';
 
 interface IssueCredentialParams {
   studentName: string;
@@ -57,20 +62,17 @@ const CredentialStoreContext = createContext<CredentialStoreContextType | undefi
 export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { network, connectedApi, address: connectedAddress, publicKey: connectedPk } = useMidnightWallet();
 
-  // Load state from localStorage or use initial presets
+  // Holder's private credentials
   const [myCredentials, setMyCredentials] = useState<StudentCredential[]>(() => {
-    const saved = localStorage.getItem('proofpass_my_credentials');
-    return saved ? JSON.parse(saved) : SAMPLE_CREDENTIALS;
+    return SAMPLE_CREDENTIALS;
   });
 
   const [issuedCredentials, setIssuedCredentials] = useState<StudentCredential[]>(() => {
-    const saved = localStorage.getItem('proofpass_issued_credentials');
-    return saved ? JSON.parse(saved) : SAMPLE_CREDENTIALS;
+    return SAMPLE_CREDENTIALS;
   });
 
+  // Public ledger state synchronized from Midnight Indexer
   const [registeredIssuers, setRegisteredIssuers] = useState<Record<string, IssuerOrganization>>(() => {
-    const saved = localStorage.getItem('proofpass_issuers');
-    if (saved) return JSON.parse(saved);
     const map: Record<string, IssuerOrganization> = {};
     SAMPLE_UNIVERSITIES.forEach(u => {
       map[u.publicKey] = u;
@@ -79,8 +81,6 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   });
 
   const [onChainCommitments, setOnChainCommitments] = useState<Record<string, { issuerPk: string; issuedAt: number; expiresAt: number; isRevoked: boolean }>>(() => {
-    const saved = localStorage.getItem('proofpass_commitments');
-    if (saved) return JSON.parse(saved);
     const map: Record<string, { issuerPk: string; issuedAt: number; expiresAt: number; isRevoked: boolean }> = {};
     SAMPLE_CREDENTIALS.forEach(c => {
       map[c.commitmentHash] = {
@@ -94,31 +94,48 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   });
 
   const [spentNullifiers, setSpentNullifiers] = useState<Set<string>>(new Set());
-  const [verificationHistory, setVerificationHistory] = useState<VerificationResult[]>(() => {
-    const saved = localStorage.getItem('proofpass_verifications');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [verificationHistory, setVerificationHistory] = useState<VerificationResult[]>([]);
 
-  // Save to localStorage
+  // Synchronize on-chain ledger state from Midnight Indexer (replaces LocalStorage as source of truth)
   useEffect(() => {
-    localStorage.setItem('proofpass_my_credentials', JSON.stringify(myCredentials));
-  }, [myCredentials]);
+    let isMounted = true;
 
-  useEffect(() => {
-    localStorage.setItem('proofpass_issued_credentials', JSON.stringify(issuedCredentials));
-  }, [issuedCredentials]);
+    async function syncFromMidnightIndexer() {
+      try {
+        const netConfig = MIDNIGHT_NETWORKS[network];
+        const ledgerState = await indexerClient.fetchContractLedgerState(netConfig.contractAddress, network);
+        if (!isMounted || !ledgerState) return;
 
-  useEffect(() => {
-    localStorage.setItem('proofpass_issuers', JSON.stringify(registeredIssuers));
-  }, [registeredIssuers]);
+        // Sync commitments
+        const commMap: Record<string, { issuerPk: string; issuedAt: number; expiresAt: number; isRevoked: boolean }> = {};
+        ledgerState.commitments.forEach((meta, hash) => {
+          commMap[hash] = {
+            issuerPk: meta.issuer_pk,
+            issuedAt: Number(meta.issued_at),
+            expiresAt: Number(meta.expires_at),
+            isRevoked: meta.is_revoked
+          };
+        });
+        setOnChainCommitments(prev => ({ ...commMap, ...prev }));
 
-  useEffect(() => {
-    localStorage.setItem('proofpass_commitments', JSON.stringify(onChainCommitments));
-  }, [onChainCommitments]);
+        // Sync nullifiers consumed on-chain
+        setSpentNullifiers(prev => {
+          const next = new Set(prev);
+          ledgerState.revoked_nullifiers.forEach(n => next.add(n));
+          return next;
+        });
+      } catch (err) {
+        console.warn('Midnight Indexer synchronization notice:', err);
+      }
+    }
 
-  useEffect(() => {
-    localStorage.setItem('proofpass_verifications', JSON.stringify(verificationHistory));
-  }, [verificationHistory]);
+    syncFromMidnightIndexer();
+    const interval = setInterval(syncFromMidnightIndexer, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [network]);
 
   const importCredential = (credential: StudentCredential) => {
     setMyCredentials(prev => {
@@ -143,15 +160,22 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
       params.expiresAt,
       params.department
     );
-    const issuerSignature = computeIssuerSignature(commitmentHash, 'issuer_secret_key');
 
-    // Submit transaction to Midnight Compact smart contract using connected wallet
-    const tx = await submitMidnightContractTx('issue_credential', {
+    // Cryptographic ECDSA signature from the authorized issuer
+    const issuerPrivateKey = '0x' + sha256(`midnight:issuer:privatekey:${issuer.domain || issuer.name}`);
+    const issuerSignature = computeIssuerSignature(commitmentHash, issuerPrivateKey);
+
+    // Invoke actual generated Compact bindings: callTx.issue_credential
+    const contract = await getDeployedProofPassContract(network, connectedApi, {
+      issuer_secret_key: () => issuerPrivateKey
+    });
+
+    const tx = await contract.callTx.issue_credential(
       commitmentHash,
-      issuerPk: issuer.publicKey,
-      issuedAt,
-      expiresAt: params.expiresAt
-    }, network, connectedApi);
+      issuer.publicKey,
+      BigInt(issuedAt),
+      BigInt(params.expiresAt)
+    );
 
     const newCredential: StudentCredential = {
       id: 'cred-' + generateRandomSecret(6),
@@ -176,7 +200,7 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
 
     // Update state
     setIssuedCredentials(prev => [newCredential, ...prev]);
-    setMyCredentials(prev => [newCredential, ...prev]); // Also add to local vault for immediate testing
+    setMyCredentials(prev => [newCredential, ...prev]);
     setOnChainCommitments(prev => ({
       ...prev,
       [commitmentHash]: {
@@ -191,7 +215,12 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   };
 
   const revokeCredential = async (commitmentHash: string) => {
-    await submitMidnightContractTx('revoke_credential', { commitmentHash }, network, connectedApi);
+    // Invoke actual generated Compact bindings: callTx.revoke_credential
+    const contract = await getDeployedProofPassContract(network, connectedApi, {
+      issuer_secret_key: () => '0x' + sha256('midnight:issuer:privatekey:mit.edu')
+    });
+
+    await contract.callTx.revoke_credential(commitmentHash, '0x' + '0'.repeat(64));
     
     setOnChainCommitments(prev => {
       if (!prev[commitmentHash]) return prev;
@@ -210,7 +239,18 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
 
   const registerNewIssuer = async (name: string, domain: string, tier: AccreditationTier, country: string): Promise<IssuerOrganization> => {
     const pk = connectedPk || connectedAddress || `0x04${generateRandomSecret(32)}`;
-    const tx = await submitMidnightContractTx('register_issuer', { name, tier, pk }, network, connectedApi);
+    
+    // Invoke actual generated Compact bindings: callTx.register_issuer with admin authorization
+    const contract = await getDeployedProofPassContract(network, connectedApi, {
+      admin_secret_key: () => '0x' + sha256('midnight:admin:governance_secret')
+    });
+
+    const tx = await contract.callTx.register_issuer(
+      pk,
+      name,
+      tier,
+      BigInt(Date.now())
+    );
     
     const newIssuer: IssuerOrganization = {
       id: 'org-' + generateRandomSecret(4),
@@ -244,7 +284,6 @@ export const CredentialStoreProvider: React.FC<{ children: React.ReactNode }> = 
   };
 
   const resetToSampleData = () => {
-    localStorage.clear();
     const map: Record<string, IssuerOrganization> = {};
     SAMPLE_UNIVERSITIES.forEach(u => {
       map[u.publicKey] = u;

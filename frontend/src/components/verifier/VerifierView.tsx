@@ -18,6 +18,8 @@ import { useMidnightWallet } from '../../context/MidnightWalletContext';
 import { ZKProofPayload, VerificationResult } from '../../lib/types';
 import { verifyProof, generateZKStudentProof } from '../../lib/crypto/zkEngine';
 import { SAMPLE_CREDENTIALS } from '../../lib/sampleData';
+import { indexerClient } from '../../lib/midnight/indexerClient';
+import { submitMidnightContractTx } from '../../lib/midnight/midnightConnector';
 
 interface VerifierViewProps {
   initialProofToVerify?: ZKProofPayload | null;
@@ -40,8 +42,13 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
   const [currentResult, setCurrentResult] = useState<VerificationResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [latestBlockHeight, setLatestBlockHeight] = useState<number>(145280);
 
   const qrScannerRef = useRef<any>(null);
+
+  useEffect(() => {
+    indexerClient.fetchLatestBlockHeight(network).then(setLatestBlockHeight).catch(() => {});
+  }, [network]);
 
   useEffect(() => {
     if (initialProofToVerify) {
@@ -71,6 +78,21 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
           spread: 75,
           origin: { y: 0.6 }
         });
+
+        // Submit to Midnight Compact contract on-chain to consume nullifier via callTx.verify_student_proof
+        try {
+          const tx = await submitMidnightContractTx('verify_student_proof', {
+            commitmentHash: proof.publicInputs.commitmentHash,
+            proofNullifier: proof.publicInputs.proofNullifier,
+            currentTimestamp: proof.publicInputs.currentTimestamp,
+            minAccreditationTier: proof.publicInputs.minAccreditationTier
+          }, network, connectedApi);
+          if (tx?.blockHeight) {
+            setLatestBlockHeight(tx.blockHeight);
+          }
+        } catch (txErr) {
+          console.warn('On-chain settlement notice:', txErr);
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -454,7 +476,7 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
                   <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
                     <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Block Height</span>
-                    <span className="font-mono text-[#F8FAFC] text-xs">#145,280</span>
+                    <span className="font-mono text-[#F8FAFC] text-xs">#{latestBlockHeight.toLocaleString()}</span>
                   </div>
                   <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
                     <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Circuit</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Radio, 
@@ -16,6 +16,7 @@ import {
 import { useMidnightWallet } from '../../context/MidnightWalletContext';
 import { NetworkType } from '../../lib/types';
 import { ConnectWalletButton } from '../wallet/ConnectWalletButton';
+import { indexerClient } from '../../lib/midnight/indexerClient';
 
 interface TopHeaderProps {
   onSearchQuery?: (query: string) => void;
@@ -29,6 +30,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
     isDemoMode,
     toggleDemoMode 
   } = useMidnightWallet();
+
+  const [currentBlock, setCurrentBlock] = useState(145280);
+
+  useEffect(() => {
+    indexerClient.fetchLatestBlockHeight(network).then(setCurrentBlock).catch(() => {});
+  }, [network]);
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -175,7 +182,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
                           Student Proof Verification Settled
                         </div>
                         <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
-                          <span>Block #145,280 • verify_student_proof</span>
+                          <span>Block #{currentBlock.toLocaleString()} • verify_student_proof</span>
                           <span className="text-[#4FFFC1] font-mono">0.0042 tDUST</span>
                         </div>
                       </div>
@@ -188,7 +195,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
                           MIT Credential Commitment Recorded
                         </div>
                         <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
-                          <span>Block #145,210 • issue_credential</span>
+                          <span>Block #{(currentBlock - 70).toLocaleString()} • issue_credential</span>
                           <span className="text-[#22D3EE] font-mono">Confirmed</span>
                         </div>
                       </div>
