@@ -1,0 +1,115 @@
+{
+  "contractName": "ProofPass",
+  "language": "Compact",
+  "languageVersion": "0.20.0",
+  "sourceHash": "a8956f890ced9c6bc0df94090d4068318ddc84e615de0e774030c70e49c3099c",
+  "compiledAt": "2026-09-24T12:08:51.927Z",
+  "circuits": [
+    {
+      "name": "register_issuer",
+      "params": [
+        {
+          "name": "issuer_pk",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "name_hash",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "accreditation_tier",
+          "type": "Uint<8>"
+        },
+        {
+          "name": "timestamp",
+          "type": "Uint<64>"
+        }
+      ],
+      "returnType": "Void",
+      "zkirSize": 1984,
+      "provingKeyHash": "94175daf7211b27a18b1e3b9795536fac234850de45c0c621aa95fd662f048c1",
+      "verificationKeyHash": "3722e09aa6e8a88210ed22403cf4e9d609976a06525f867e258f2a6461c2596e"
+    },
+    {
+      "name": "issue_credential",
+      "params": [
+        {
+          "name": "commitment_hash",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "issuer_pk",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "issued_at",
+          "type": "Uint<64>"
+        },
+        {
+          "name": "expires_at",
+          "type": "Uint<64>"
+        }
+      ],
+      "returnType": "Void",
+      "zkirSize": 2048,
+      "provingKeyHash": "3361fdc428c42e5e83b91a5e9cd2ab7fd3dd073853ec46f79b917b1ee2f2924d",
+      "verificationKeyHash": "f90179cb63faf78acffe6618127ae8b87f7414b9eb278aa61974fd916332cbbe"
+    },
+    {
+      "name": "verify_student_proof",
+      "params": [
+        {
+          "name": "commitment_hash",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "proof_nullifier",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "current_timestamp",
+          "type": "Uint<64>"
+        },
+        {
+          "name": "min_accreditation_tier",
+          "type": "Uint<8>"
+        }
+      ],
+      "returnType": "Boolean",
+      "zkirSize": 2304,
+      "provingKeyHash": "59dca142f5df3022f924248e0fe30939838d95e49e8876dadc301291d35b10da",
+      "verificationKeyHash": "b8725985a0b6c27b92d9945bb0503ea1ccbab220cf7864030683349a8b6a9b28"
+    },
+    {
+      "name": "revoke_credential",
+      "params": [
+        {
+          "name": "commitment_hash",
+          "type": "Bytes<32>"
+        },
+        {
+          "name": "nullifier",
+          "type": "Bytes<32>"
+        }
+      ],
+      "returnType": "Void",
+      "zkirSize": 2112,
+      "provingKeyHash": "1cc872bb4bb0dcffcb3d15dfe41d68b3be959899b0c0ede70391816fa3e53413",
+      "verificationKeyHash": "b1b8740e0a86afb1db77d54fcbd213e0b98b161f9728ea4dbc5bc24318f8ccca"
+    }
+  ],
+  "witnesses": [
+    "admin_secret_key",
+    "issuer_secret_key",
+    "student_secret_salt",
+    "student_id_hash",
+    "student_secret_key"
+  ],
+  "ledger": [
+    "admin",
+    "issuers",
+    "commitments",
+    "revoked_nullifiers",
+    "total_verified_count"
+  ]
+}

@@ -12,7 +12,8 @@
     "build:backend": "npm --prefix backend run build",
     "test": "npm --prefix backend run test && npm --prefix frontend run test",
     "test:frontend": "npm --prefix frontend run test",
-    "test:backend": "npm --prefix backend run test"
+    "test:backend": "npm --prefix backend run test",
+    "compile:compact": "node scripts/compile-compact.mjs"
   },
   "keywords": [
     "midnight",
