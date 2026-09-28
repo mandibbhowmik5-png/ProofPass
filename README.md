@@ -20,9 +20,13 @@
 | **CI/CD Pipeline Badge & Workflow** | ✅ Active | [![CI/CD Pipeline](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml/badge.svg)](https://github.com/mandibbhowmik5-png/ProofPass/actions/workflows/ci.yml) |
 | **Product X (Twitter) Profile** | ✅ Live | [@MIDNIGHTya0ne](https://x.com/MIDNIGHTya0ne) |
 | **MVP Demo Video** | ✅ Included | [Watch MVP Demo Video](#-mvp-demo-video) |
-| **Minimum 20 Meaningful Commits** | ✅ Verified | 20+ atomic commits tracking full contract, backend, frontend, and tests |
+| **Level 6 Commit Requirement (30+ Commits)** | ✅ Verified | **30+ Meaningful Commits** tracking contracts, tests, SDK migration, and UI |
+| **Level 6 Launch Users Directory** | ✅ 25 Users | [LAUNCH_USERS.md](LAUNCH_USERS.md) / [docs/LAUNCH_USERS.md](docs/LAUNCH_USERS.md) (125% of 20-user target) |
 | **Verified Preprod Community Users** | ✅ 72 Users | [USERS.md](USERS.md) (144% of 50-user goal achieved) |
-| **User Feedback & Resolution Matrix** | ✅ Resolved | [FEEDBACK.md](FEEDBACK.md) (Google Form & Sheet responses incorporated) |
+| **User Feedback & Resolution Matrix** | ✅ Resolved | [FEEDBACK.md](FEEDBACK.md) / [docs/FEEDBACK.md](docs/FEEDBACK.md) (Cross-referenced with code diffs) |
+| **Real Preprod E2E Lifecycle Test** | ✅ Passing | [`frontend/test/preprodE2E.test.ts`](frontend/test/preprodE2E.test.ts) (issue → prove → submit → indexer → revoke → reject) |
+| **Project Proposal & Architecture** | ✅ Complete | [PROPOSAL.md](PROPOSAL.md) / [docs/PROPOSAL.md](docs/PROPOSAL.md) |
+| **Brand Brief & Identity Guidelines** | ✅ Documented | [docs/BRAND.md](docs/BRAND.md) |
 
 ---
 
@@ -91,7 +95,56 @@
 
 ---
 
-> **ProofPass** is a privacy-first digital credential platform built for the **Midnight blockchain ecosystem**. It allows accredited educational institutions (Universities) to issue tamper-proof digital credentials, students (Holders) to store them self-sovereignly and generate zero-knowledge proofs ("I am an active student at an accredited university"), and verifiers (hackathons, job fairs, student discounts) to verify status in real time **without accessing sensitive PII** (Full Legal Name, Student ID, Date of Birth, or GPA).
+## 🛡️ Privacy Model
+
+ProofPass enforces a strict, mathematical **Zero-Knowledge Privacy Model** rooted in the Midnight blockchain's dual shielded/public architecture:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        OFF-CHAIN CLIENT VAULT                          │
+│  (Kept strictly on student device — NEVER exposed or broadcast)       │
+│  • Full Legal Name          • University Student ID                    │
+│  • Date of Birth            • Cumulative GPA & Transcript Data         │
+│  • Private Salt (s)         • Student Private Key (sk_s)               │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+               1. Preimage Binding: Hash(id_h + s) == Commitment
+               2. Nullifier Derivation: Hash(s + sk_s) == Nullifier
+               3. ZK Predicates: isEnrolled && isAccredited && notExpired
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                    MIDNIGHT ON-CHAIN PUBLIC LEDGER                     │
+│  (Verifiable, immutable state — ZERO PII stored or leaked)             │
+│  • commitment_hash: 32-byte opaque hash                                │
+│  • issuer_pk: University authority public key                          │
+│  • revoked_nullifiers: Set of spent nullifiers (prevents replay)       │
+│  • total_verified_count: Public proof counter                          │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Off-Chain Shielded Data Vault**: Raw PII (Name, Student ID, DOB, GPA) is stored exclusively in the student's browser device vault and encrypted locally. It is never transmitted to the verifier, backend server, or blockchain.
+2. **Cryptographic Commitment Scheme**: The university computes a tamper-proof commitment:
+   $$\text{commitment\_hash} = \text{persistent\_hash}([\text{student\_id\_hash}, \text{student\_secret\_salt}])$$
+   Only this 32-byte hash and validity timestamps are stored on the Midnight ledger.
+3. **Zero-Knowledge Predicate Verification**: Rather than showing an ID card or diploma, the student generates a zk-SNARK proof demonstrating:
+   - Knowledge of the commitment preimage without revealing the student ID or secret salt.
+   - The credential has not reached its expiration timestamp ($\text{expires\_at} > \text{current\_timestamp}$).
+   - The issuing university is recognized in Midnight's active registry with adequate accreditation ($\text{tier} \le \text{min\_tier}$).
+4. **Unlinkability & One-Time Nullifiers**: To prevent tracking student activity across multiple third-party verifiers, every verification derives a cryptographic nullifier:
+   $$\text{proof\_nullifier} = \text{persistent\_hash}([\text{student\_secret\_salt}, \text{student\_secret\_key}])$$
+   The on-chain circuit (`verify_student_proof`) commits this nullifier to `revoked_nullifiers`, preventing double-spending while preventing verifiers from linking separate proofs to the same holder.
+
+---
+
+## 🚀 Level 6 Launch Users & Community Adoption
+
+ProofPass has undergone comprehensive user evaluation on **Midnight Preprod Testnet**:
+
+- **Level 6 Launch Users**: **25 Verified Community Users** documented in [`LAUNCH_USERS.md`](LAUNCH_USERS.md) and [`docs/LAUNCH_USERS.md`](docs/LAUNCH_USERS.md). Each entry includes a verifiable Midnight Preprod Bech32m address (`mn_addr_preprod1...`), role, institution, and verification scenario.
+- **Level 5 Preprod Testers**: **72 Community Users** documented in [`USERS.md`](USERS.md) with an average satisfaction rating of **4.76 / 5.0 ⭐**.
+- **Total Tested Community Wallets**: **97 Verifiable Midnight Preprod Wallets** across student holders, university administrators, and third-party recruiters.
+- **Feedback & Codebase Resolutions**: [`FEEDBACK.md`](FEEDBACK.md) / [`docs/FEEDBACK.md`](docs/FEEDBACK.md) cross-references every user suggestion with exact code diffs and commit hashes.
 
 ---
 
