@@ -3,7 +3,7 @@
   "language": "Compact",
   "languageVersion": "0.20.0",
   "sourceHash": "a8956f890ced9c6bc0df94090d4068318ddc84e615de0e774030c70e49c3099c",
-  "compiledAt": "2026-09-28T12:16:34.807Z",
+  "compiledAt": "2026-09-28T12:53:21.260Z",
   "circuits": [
     {
       "name": "register_issuer",

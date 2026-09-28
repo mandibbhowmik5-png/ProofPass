@@ -42,7 +42,7 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
   const [currentResult, setCurrentResult] = useState<VerificationResult | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [latestBlockHeight, setLatestBlockHeight] = useState<number>(145280);
+  const [latestBlockHeight, setLatestBlockHeight] = useState<number | null>(null);
 
   const qrScannerRef = useRef<any>(null);
 
@@ -476,7 +476,7 @@ export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
                   <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
                     <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Block Height</span>
-                    <span className="font-mono text-[#F8FAFC] text-xs">#{latestBlockHeight.toLocaleString()}</span>
+                    <span className="font-mono text-[#F8FAFC] text-xs">{latestBlockHeight !== null ? `#${latestBlockHeight.toLocaleString()}` : 'Live Sync...'}</span>
                   </div>
                   <div className="p-2.5 bg-[#050B1A] border border-[#1E2E4A] rounded-xl">
                     <span className="text-[#94A3B8] block text-[10px] uppercase font-semibold">Circuit</span>

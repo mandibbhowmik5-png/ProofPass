@@ -8,5 +8,5 @@
   "nodeEndpoint": "https://rpc.preprod.midnight.network",
   "indexerEndpoint": "https://indexer.preprod.midnight.network/api/v4/graphql",
   "explorerLink": "https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e",
-  "deployedAt": "2026-09-28T12:17:53.171Z"
+  "deployedAt": "2026-09-28T12:53:29.455Z"
 }
