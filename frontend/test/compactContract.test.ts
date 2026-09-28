@@ -15,6 +15,9 @@ import {
   deriveProofNullifier, 
   deriveIssuerKeypair 
 } from '../src/lib/crypto/zkEngine';
+import { ProofPassProvingProvider, ProofServerUnavailableError } from '../src/lib/midnight/provingProvider';
+import { indexerClient, IndexerUnavailableError } from '../src/lib/midnight/indexerClient';
+import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 async function runCompactContractTests() {
   console.log('🧪 Starting ProofPass Midnight Compact Smart Contract & Bindings Test Suite...\n');
@@ -232,6 +235,61 @@ async function runCompactContractTests() {
       passed++;
     } else {
       console.error('❌ Test 8 Failed: callTx.revoke_credential failed');
+      failed++;
+    }
+
+    // -------------------------------------------------------------
+    // Test 9: Zero-Synthetic Proof: ProofServerUnavailableError Thrown
+    // -------------------------------------------------------------
+    let proverFailedVisibly = false;
+    try {
+      const realProver = new ProofPassProvingProvider('http://127.0.0.1:9999'); // Non-existent prover port
+      await realProver.generateProof('verify_student_proof', { commitment: '0x123' }, {});
+    } catch (err: any) {
+      if (err instanceof ProofServerUnavailableError || err.name === 'ProofServerUnavailableError') {
+        proverFailedVisibly = true;
+      }
+    }
+
+    if (proverFailedVisibly) {
+      console.log('✅ Test 9 Passed: ProvingProvider strictly failed visibly with ProofServerUnavailableError (no synthetic fallback)');
+      passed++;
+    } else {
+      console.error('❌ Test 9 Failed: Prover did not throw ProofServerUnavailableError');
+      failed++;
+    }
+
+    // -------------------------------------------------------------
+    // Test 10: Zero-Synthetic Indexer: IndexerUnavailableError Thrown
+    // -------------------------------------------------------------
+    let indexerFailedVisibly = false;
+    try {
+      // Querying invalid/unreachable indexer endpoint
+      await indexerClient.query('{ invalidQuery }', {}, 'midnight-local');
+    } catch (err: any) {
+      if (err instanceof IndexerUnavailableError || err.name === 'IndexerUnavailableError') {
+        indexerFailedVisibly = true;
+      }
+    }
+
+    if (indexerFailedVisibly) {
+      console.log('✅ Test 10 Passed: IndexerClient strictly failed visibly with IndexerUnavailableError (no synthetic ledger fallback)');
+      passed++;
+    } else {
+      console.error('❌ Test 10 Failed: Indexer did not throw IndexerUnavailableError');
+      failed++;
+    }
+
+    // -------------------------------------------------------------
+    // Test 11: Official SDK setNetworkId & getNetworkId Verification
+    // -------------------------------------------------------------
+    setNetworkId('preprod');
+    const activeNetwork = getNetworkId();
+    if (activeNetwork === 'preprod') {
+      console.log('✅ Test 11 Passed: Official @midnight-ntwrk/midnight-js-network-id correctly set active network to "preprod"');
+      passed++;
+    } else {
+      console.error(`❌ Test 11 Failed: Expected networkId "preprod", got "${activeNetwork}"`);
       failed++;
     }
 

@@ -150,6 +150,45 @@ async function runWalletTests() {
       }
     }
 
+    // TEST 8: Official DApp Connector API getConfiguration() Network Verification
+    (global as any).window.midnight[mockWalletUuid].connect = async () => {
+      return {
+        ...mockConnectedApi,
+        getConfiguration: async () => ({
+          networkId: 'preview', // Mismatched network (wallet is on preview, dapp wants preprod)
+          indexerUri: 'https://indexer.preview.midnight.network/api/v4/graphql',
+          indexerWsUri: 'wss://indexer.preview.midnight.network',
+          substrateNodeUri: 'https://rpc.preview.midnight.network'
+        })
+      };
+    };
+
+    try {
+      await connectMidnightWallet('midnight-preprod');
+      throw new Error('Should have thrown on network mismatch');
+    } catch (netMismatchErr: any) {
+      if (netMismatchErr.walletError?.code === 'WRONG_NETWORK') {
+        console.log('✅ Test 8 Passed: Official DApp Connector getConfiguration strictly detected network mismatch');
+        passed++;
+      } else {
+        throw new Error(`Expected WRONG_NETWORK but got ${netMismatchErr.walletError?.code}`);
+      }
+    }
+
+    // TEST 9: Official DApp Connector APIError mapping (ErrorCodes.Rejected)
+    const officialDAppError = {
+      type: 'DAppConnectorAPIError',
+      code: 'Rejected',
+      reason: 'User declined transaction authorization in Midnight wallet'
+    };
+    const parsedDAppErr = parseWalletError(officialDAppError);
+    if (parsedDAppErr.code === 'USER_REJECTED') {
+      console.log('✅ Test 9 Passed: Official DApp Connector ErrorCodes.Rejected correctly mapped to USER_REJECTED');
+      passed++;
+    } else {
+      throw new Error(`Expected USER_REJECTED from DAppConnectorAPIError but got ${parsedDAppErr.code}`);
+    }
+
   } catch (err: any) {
     console.error('❌ Test 5/6/7 Failed:', err.message);
     failed++;

@@ -26,7 +26,7 @@ interface VerifierViewProps {
 }
 
 export const VerifierView: React.FC<VerifierViewProps> = ({ initialProofToVerify }) => {
-  const { network } = useMidnightWallet();
+  const { network, connectedApi } = useMidnightWallet();
   const { 
     registeredIssuers, 
     onChainCommitments, 

@@ -148,6 +148,7 @@ function generateTypeScriptBindings(circuits, witnesses, sourceHash) {
  */
 
 import { sha256 } from 'js-sha256';
+import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 export enum IssuerStatus {
   INACTIVE = 0,
@@ -562,11 +563,7 @@ function bindDeployedContract<T = any>(
     },
 
     async queryLedgerState() {
-      try {
-        return await providers.indexer.queryContractState(contractAddress);
-      } catch {
-        return state;
-      }
+      return await providers.indexer.queryContractState(contractAddress);
     }
   };
 }

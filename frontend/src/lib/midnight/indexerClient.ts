@@ -1,7 +1,23 @@
+import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { MIDNIGHT_NETWORKS } from './midnightConnector';
 import { NetworkType } from '../types';
-import { ProofPassLedgerState, IssuerStatus } from '../../contracts/proofpass/index';
-import { SAMPLE_UNIVERSITIES, SAMPLE_CREDENTIALS } from '../sampleData';
+import { ProofPassLedgerState } from '../../contracts/proofpass/index';
+
+export class IndexerUnavailableError extends Error {
+  readonly endpoint: string;
+  readonly network: NetworkType;
+
+  constructor(endpoint: string, network: NetworkType, cause?: any) {
+    super(
+      `Midnight indexer service is unreachable at ${endpoint} (${network}). ` +
+      `Failed to retrieve confirmed ledger state from Midnight blockchain.`
+    );
+    this.name = 'IndexerUnavailableError';
+    this.endpoint = endpoint;
+    this.network = network;
+    this.cause = cause;
+  }
+}
 
 export interface MidnightBlockInfo {
   height: number;
@@ -20,7 +36,8 @@ class MidnightIndexerClient {
   private blockHeightCache: Map<NetworkType, { height: number; updatedAt: number }> = new Map();
 
   /**
-   * Execute a GraphQL query against the target Midnight network's indexer
+   * Execute a GraphQL query against the target Midnight network's indexer.
+   * Fails visibly if indexer is unreachable.
    */
   async query<T = any>(
     graphqlQuery: string,
@@ -29,9 +46,17 @@ class MidnightIndexerClient {
   ): Promise<T> {
     const netConfig = MIDNIGHT_NETWORKS[network];
     const endpoint = netConfig.indexerUri;
+    const sdkNetwork = netConfig.networkId as 'preprod' | 'preview' | 'undeployed';
 
     try {
-      const response = await fetch(endpoint, {
+      setNetworkId(sdkNetwork);
+    } catch {
+      // Ignore if already set
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,28 +66,38 @@ class MidnightIndexerClient {
           query: graphqlQuery,
           variables
         }),
-        signal: AbortSignal.timeout(4000)
+        signal: AbortSignal.timeout(5000)
       });
-
-      if (!response.ok) {
-        throw new Error(`Midnight indexer HTTP error: ${response.status} ${response.statusText}`);
-      }
-
-      const json = await response.json();
-      if (json.errors && json.errors.length > 0) {
-        throw new Error(`Midnight GraphQL error: ${json.errors[0].message}`);
-      }
-
-      return json.data as T;
     } catch (err: any) {
-      // In offline / dev / preview environments, gracefully return fallback state
-      throw err;
+      throw new IndexerUnavailableError(endpoint, network, err);
     }
+
+    if (!response.ok) {
+      throw new IndexerUnavailableError(
+        endpoint,
+        network,
+        new Error(`Midnight indexer HTTP error: ${response.status} ${response.statusText}`)
+      );
+    }
+
+    const json = await response.json().catch(err => {
+      throw new IndexerUnavailableError(endpoint, network, err);
+    });
+
+    if (json.errors && json.errors.length > 0) {
+      throw new IndexerUnavailableError(
+        endpoint,
+        network,
+        new Error(`Midnight GraphQL error: ${json.errors[0].message}`)
+      );
+    }
+
+    return json.data as T;
   }
 
   /**
-   * Fetch the latest confirmed block height from the Midnight network
-   * Eliminates fake random block heights.
+   * Fetch the latest confirmed block height from the Midnight network.
+   * Fails visibly when indexer is unavailable.
    */
   async fetchLatestBlockHeight(network: NetworkType = 'midnight-preprod'): Promise<number> {
     const cached = this.blockHeightCache.get(network);
@@ -81,27 +116,23 @@ class MidnightIndexerClient {
       }
     `;
 
-    try {
-      const data = await this.query<{ block: { height: number } }>(query, {}, network);
-      if (data?.block?.height) {
-        this.blockHeightCache.set(network, { height: data.block.height, updatedAt: now });
-        return data.block.height;
-      }
-    } catch {
-      // Deterministic confirmed block base on Midnight Preprod testnet
-      const baseBlockHeight = 145280;
-      const elapsedMinutes = Math.floor((now - 1758000000000) / (60 * 1000));
-      const confirmedHeight = baseBlockHeight + Math.max(0, elapsedMinutes % 1000);
-      this.blockHeightCache.set(network, { height: confirmedHeight, updatedAt: now });
-      return confirmedHeight;
+    const data = await this.query<{ block: { height: number } }>(query, {}, network);
+    if (data?.block?.height) {
+      this.blockHeightCache.set(network, { height: data.block.height, updatedAt: now });
+      return data.block.height;
     }
 
-    return 145280;
+    throw new IndexerUnavailableError(
+      MIDNIGHT_NETWORKS[network].indexerUri,
+      network,
+      new Error('Block height missing from indexer response')
+    );
   }
 
   /**
-   * Query contract ledger state from the Midnight Indexer
+   * Query contract ledger state from the Midnight Indexer.
    * Replaces LocalStorage as the source of truth for public ledger state.
+   * Fails visibly when indexer is unavailable.
    */
   async fetchContractLedgerState(
     contractAddress: string,
@@ -119,48 +150,21 @@ class MidnightIndexerClient {
       }
     `;
 
-    try {
-      const data = await this.query<{ contract: { state: any; block: { height: number } } }>(
-        query,
-        { contractAddress },
-        network
-      );
+    const data = await this.query<{ contract: { state: any; block: { height: number } } }>(
+      query,
+      { contractAddress },
+      network
+    );
 
-      if (data?.contract?.state) {
-        return this.deserializeLedgerState(data.contract.state);
-      }
-    } catch {
-      // Construct fallback ledger state seeded from confirmed Midnight Preprod smart contract
+    if (!data?.contract?.state) {
+      throw new IndexerUnavailableError(
+        MIDNIGHT_NETWORKS[network].indexerUri,
+        network,
+        new Error(`Contract state not found for address ${contractAddress}`)
+      );
     }
 
-    // Return synchronized canonical ledger state for deployed contract
-    const issuers = new Map<string, any>();
-    SAMPLE_UNIVERSITIES.forEach(u => {
-      issuers.set(u.publicKey.toLowerCase(), {
-        name_hash: u.id,
-        accreditation_tier: u.accreditationTier,
-        status: IssuerStatus.ACTIVE,
-        registered_at: BigInt(u.registeredAt)
-      });
-    });
-
-    const commitments = new Map<string, any>();
-    SAMPLE_CREDENTIALS.forEach(c => {
-      commitments.set(c.commitmentHash.toLowerCase(), {
-        issuer_pk: c.issuerPublicKey.toLowerCase(),
-        issued_at: BigInt(c.issuedAt),
-        expires_at: BigInt(c.expiresAt),
-        is_revoked: Boolean(c.isRevoked)
-      });
-    });
-
-    return {
-      admin: '0x04e82b79a1f24d9c87b9e0123456789abcdef0123456789abcdef0123456789a',
-      issuers,
-      commitments,
-      revoked_nullifiers: new Set<string>(),
-      total_verified_count: 142n
-    };
+    return this.deserializeLedgerState(data.contract.state);
   }
 
   private deserializeLedgerState(rawState: any): ProofPassLedgerState {

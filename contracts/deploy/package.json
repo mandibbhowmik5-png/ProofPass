@@ -5,16 +5,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy:preview":  "npx tsx src/deploy.ts --network preview",
-    "deploy:preprod":  "npx tsx src/deploy.ts --network preprod"
+    "deploy:preview": "node src/deploy.mjs --network preview",
+    "deploy:preprod": "node src/deploy.mjs --network preprod",
+    "verify:preprod": "node src/deploy.mjs --network preprod --verify",
+    "verify:preview": "node src/deploy.mjs --network preview --verify"
   },
   "dependencies": {
-    "@midnight-ntwrk/midnight-js-contracts":    ">=0.1.0",
-    "@midnight-ntwrk/midnight-js-network-id":   ">=0.1.0",
-    "@midnight-ntwrk/midnight-js-types":        ">=0.1.0"
+    "@midnight-ntwrk/midnight-js-contracts": ">=0.1.0",
+    "@midnight-ntwrk/midnight-js-network-id": ">=0.1.0",
+    "@midnight-ntwrk/midnight-js-types": ">=0.1.0",
+    "js-sha256": "^0.11.1"
   },
   "devDependencies": {
-    "tsx":        "^4.19.3",
+    "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   }
 }

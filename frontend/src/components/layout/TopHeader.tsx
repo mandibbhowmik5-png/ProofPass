@@ -31,10 +31,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
     toggleDemoMode 
   } = useMidnightWallet();
 
-  const [currentBlock, setCurrentBlock] = useState(145280);
+  const [currentBlock, setCurrentBlock] = useState<number | null>(null);
 
   useEffect(() => {
-    indexerClient.fetchLatestBlockHeight(network).then(setCurrentBlock).catch(() => {});
+    indexerClient.fetchLatestBlockHeight(network).then(setCurrentBlock).catch(() => {
+      setCurrentBlock(null);
+    });
   }, [network]);
 
   const [isNetworkDropdownOpen, setIsNetworkDropdownOpen] = useState(false);
@@ -182,7 +184,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
                           Student Proof Verification Settled
                         </div>
                         <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
-                          <span>Block #{currentBlock.toLocaleString()} • verify_student_proof</span>
+                          <span>{currentBlock ? `Block #${currentBlock.toLocaleString()}` : 'Preprod Ledger'} • verify_student_proof</span>
                           <span className="text-[#4FFFC1] font-mono">0.0042 tDUST</span>
                         </div>
                       </div>
@@ -195,7 +197,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onSearchQuery }) => {
                           MIT Credential Commitment Recorded
                         </div>
                         <div className="text-[10px] text-[#94A3B8] flex items-center justify-between mt-0.5">
-                          <span>Block #{(currentBlock - 70).toLocaleString()} • issue_credential</span>
+                          <span>{currentBlock ? `Block #${(currentBlock - 70).toLocaleString()}` : 'Preprod Ledger'} • issue_credential</span>
                           <span className="text-[#22D3EE] font-mono">Confirmed</span>
                         </div>
                       </div>

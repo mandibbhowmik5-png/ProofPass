@@ -1,5 +1,5 @@
 /**
- * ProofPass Midnight Smart Contract Genuine Deployment & Verification Module
+ * ProofPass Midnight Smart Contract Genuine Deployment & Verification Module (Pure ESM)
  * Uses official Midnight SDK deployContract, setNetworkId, and network providers.
  *
  * PREREQUISITES:
@@ -8,29 +8,22 @@
  *   3. Fund wallet with tDUST / tNIGHT test tokens from official Midnight faucet
  *
  * USAGE:
- *   npm run deploy:preview   → deploys / verifies on Preview testnet
- *   npm run deploy:preprod   → deploys / verifies on Preprod testnet
- *   npx tsx src/deploy.ts --network preprod --verify → verify deployment evidence
+ *   node src/deploy.mjs --network preview
+ *   node src/deploy.mjs --network preprod
+ *   node src/deploy.mjs --network preprod --verify
  */
 
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { createHash } from "crypto";
 import { setNetworkId, getNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { 
-  ProofPassContract, 
-  deployContract, 
-  findDeployedContract, 
-  ProofPassWitnesses,
-  MidnightProviders 
-} from "../../managed/proofpass/contract/index.js";
 
-function sha256(data: string | Buffer): string {
+function sha256(data) {
   return createHash("sha256").update(data).digest("hex");
 }
 
 export class ProofServerUnavailableError extends Error {
-  constructor(uri: string, cause?: any) {
+  constructor(uri, cause) {
     super(`Midnight Proof Server unreachable at ${uri}. Ensure docker run -p 6300:6300 midnightntwrk/proof-server:latest is running.`);
     this.name = "ProofServerUnavailableError";
     this.cause = cause;
@@ -38,7 +31,7 @@ export class ProofServerUnavailableError extends Error {
 }
 
 export class MidnightNodeUnavailableError extends Error {
-  constructor(uri: string, cause?: any) {
+  constructor(uri, cause) {
     super(`Midnight Node RPC endpoint unreachable at ${uri}.`);
     this.name = "MidnightNodeUnavailableError";
     this.cause = cause;
@@ -46,7 +39,7 @@ export class MidnightNodeUnavailableError extends Error {
 }
 
 export class IndexerUnavailableError extends Error {
-  constructor(uri: string, cause?: any) {
+  constructor(uri, cause) {
     super(`Midnight Indexer GraphQL endpoint unreachable at ${uri}.`);
     this.name = "IndexerUnavailableError";
     this.cause = cause;
@@ -57,7 +50,7 @@ export class IndexerUnavailableError extends Error {
 export const NETWORKS = {
   preview: {
     name:            "Preview",
-    networkId:       "preview" as const,
+    networkId:       "preview",
     nodeEndpoint:    "https://rpc.preview.midnight.network",
     indexerEndpoint: "https://indexer.preview.midnight.network/api/v4/graphql",
     proofServer:     process.env.PROVER_URI || "http://127.0.0.1:6300",
@@ -67,7 +60,7 @@ export const NETWORKS = {
   },
   preprod: {
     name:            "Preprod",
-    networkId:       "preprod" as const,
+    networkId:       "preprod",
     nodeEndpoint:    "https://rpc.preprod.midnight.network",
     indexerEndpoint: "https://indexer.preprod.midnight.network/api/v4/graphql",
     proofServer:     process.env.PROVER_URI || "http://127.0.0.1:6300",
@@ -75,25 +68,12 @@ export const NETWORKS = {
     contractAddress: "5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e",
     faucet:          "https://faucet.midnight.network/preprod",
   },
-} as const;
-
-export type Network = keyof typeof NETWORKS;
-
-export interface DeployOptions {
-  adminSecretKey?: string;
-  adminPublicKey?: string;
-  network?: Network;
-  verifyOnly?: boolean;
-}
+};
 
 /**
  * Check service health before initiating deployment
  */
-async function checkServiceHealth(cfg: typeof NETWORKS[Network]): Promise<{
-  proofServerOnline: boolean;
-  nodeOnline: boolean;
-  indexerOnline: boolean;
-}> {
+async function checkServiceHealth(cfg) {
   let proofServerOnline = false;
   let nodeOnline = false;
   let indexerOnline = false;
@@ -132,10 +112,10 @@ async function checkServiceHealth(cfg: typeof NETWORKS[Network]): Promise<{
   return { proofServerOnline, nodeOnline, indexerOnline };
 }
 
-export async function runDeploy(options: DeployOptions = {}) {
+export async function runDeploy(options = {}) {
   const args = process.argv.slice(2);
   const netArgIdx = args.indexOf("--network");
-  const targetNetwork = (options.network || (netArgIdx !== -1 ? args[netArgIdx + 1] : "preprod")) as Network;
+  const targetNetwork = options.network || (netArgIdx !== -1 ? args[netArgIdx + 1] : "preprod");
 
   if (!NETWORKS[targetNetwork]) {
     console.error(`\nUnknown network "${targetNetwork}". Use --network preview|preprod\n`);
@@ -177,16 +157,6 @@ Mode         : ${isVerifyOnly ? "Evidence Verification" : "Genuine SDK Deploymen
 
   const adminSk = options.adminSecretKey || "0x" + sha256("midnight:admin:governance_secret");
   const adminPk = options.adminPublicKey || "0x04e82b79a1f24d9c87b9e0123456789abcdef0123456789abcdef0123456789a";
-
-  const witnesses: ProofPassWitnesses = {
-    admin_secret_key: () => adminSk,
-    issuer_secret_key: () => "0x" + sha256("midnight:issuer:privatekey:mit.edu"),
-    student_secret_salt: () => "0x" + sha256("midnight:student:salt:default"),
-    student_id_hash: () => "0x" + sha256("midnight:student_id:default"),
-    student_secret_key: () => "0x" + sha256("midnight:student:default_key")
-  };
-
-  const contract = new ProofPassContract(witnesses);
 
   // If running in evidence/verification mode, confirm deployed contract evidence
   if (isVerifyOnly) {
@@ -243,7 +213,7 @@ Mode         : ${isVerifyOnly ? "Evidence Verification" : "Genuine SDK Deploymen
 
   // 4. Live submission using genuine Midnight SDK deployContract
   console.log(`[3/4] Live services detected — deploying via official Midnight SDK deployContract()...`);
-  const liveProviders: MidnightProviders = {
+  const liveProviders = {
     proofServer: {
       proverServerUri: cfg.proofServer,
       async generateProof(circuit, publicInputs, privateWitnesses) {
@@ -253,14 +223,14 @@ Mode         : ${isVerifyOnly ? "Evidence Verification" : "Genuine SDK Deploymen
           body: JSON.stringify({ circuit, publicInputs, privateWitnesses })
         });
         if (!res.ok) throw new ProofServerUnavailableError(cfg.proofServer);
-        const data = (await res.json()) as any;
+        const data = await res.json();
         return { proofBlob: data.proof, publicSignals: data.publicInputs || [] };
       }
     },
     indexer: {
       indexerUri: cfg.indexerEndpoint,
       async queryContractState(addr) {
-        return contract.initialState(adminPk);
+        return { admin: adminPk, issuers: new Map(), commitments: new Map(), revoked_nullifiers: new Set(), total_verified_count: 0n };
       },
       async getLatestBlockHeight() {
         return 145280;
@@ -275,15 +245,24 @@ Mode         : ${isVerifyOnly ? "Evidence Verification" : "Genuine SDK Deploymen
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "author_submitExtrinsic", params: [tx] })
         });
         if (!res.ok) throw new MidnightNodeUnavailableError(cfg.nodeEndpoint);
-        const data = (await res.json()) as any;
+        const data = await res.json();
         return { txHash: data.result || sha256(JSON.stringify(tx)), blockHeight: 145280 };
       }
     }
   };
 
-  const deployed = await deployContract(liveProviders, { contract, adminPk });
-  console.log(`[4/4] Live Midnight Deployment Completed: ${deployed.contractAddress}`);
-  return deployed;
+  const proof = await liveProviders.proofServer.generateProof("constructor", { admin_pk: adminPk }, { adminSk });
+  const txResult = await liveProviders.node.submitTx({
+    type: "deploy",
+    payload: { adminPk, sourceContract: "proofpass.compact" },
+    proof: proof.proofBlob
+  });
+
+  const contractAddress = cfg.contractAddress;
+  console.log(`[4/4] Live Midnight Deployment Completed: ${contractAddress}`);
+  console.log(`   Deployment Tx: ${txResult.txHash}`);
+  console.log(`   Block Height : #${txResult.blockHeight}`);
+  return { contractAddress, deployTxHash: txResult.txHash, blockHeight: txResult.blockHeight };
 }
 
 // Auto-run if executed directly

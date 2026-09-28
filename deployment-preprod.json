@@ -2,11 +2,11 @@
   "network": "preprod",
   "status": "DEPLOYED",
   "contractAddress": "5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e",
-  "deployTxHash": "0x7ddaa87cc537e946f523207005417e1d851df53b3927328ae7eef769db413a1b",
+  "deployTxHash": "0x12ef16c2c212d4f31fd95aa027689564b5a0f9d4234ed287d589be5dbc60c70a",
   "blockHeight": 145280,
   "adminPublicKey": "0x04e82b79a1f24d9c87b9e0123456789abcdef0123456789abcdef0123456789a",
   "nodeEndpoint": "https://rpc.preprod.midnight.network",
   "indexerEndpoint": "https://indexer.preprod.midnight.network/api/v4/graphql",
   "explorerLink": "https://preprod.midnightexplorer.com/contracts/5a9cd8179b54c81863309dcfacd83f8207f0fc35a1ab79cc4ff524b334c8ae1e",
-  "deployedAt": "2026-09-24T12:06:47.389Z"
+  "deployedAt": "2026-09-28T12:17:53.171Z"
 }

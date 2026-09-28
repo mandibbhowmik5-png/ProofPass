@@ -43,8 +43,11 @@ jobs:
         run: |
           npm run build
 
-      - name: 🛡️ Verify Midnight Deployment Artifacts
+      - name: 🛡️ Verify Midnight Deployment Artifacts & Preprod Evidence
         run: |
           test -f contracts/proofpass.compact
-          test -f contracts/deploy/src/deploy.ts
-          echo "Midnight Compact contract and deployment scripts verified."
+          test -f contracts/deploy/src/deploy.mjs
+          test -f deployment-preprod.json
+          npm --prefix contracts/deploy install
+          npm --prefix contracts/deploy run verify:preprod
+          echo "Midnight Compact contract, SDK bindings, and Preprod deployment verified."

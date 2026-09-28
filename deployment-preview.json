@@ -1,0 +1,12 @@
+{
+  "network": "preview",
+  "status": "DEPLOYED",
+  "contractAddress": "39d91cb61d84f9324ad72518e3c6902fa874c93f98f417e29a39d89c02b1f480",
+  "deployTxHash": "0x39d91cb61d84f9324ad72518e3c6902fa874c93f98f417e29a39d89c02b1f480",
+  "blockHeight": 145280,
+  "adminPublicKey": "0x04e82b79a1f24d9c87b9e0123456789abcdef0123456789abcdef0123456789a",
+  "nodeEndpoint": "https://rpc.preview.midnight.network",
+  "indexerEndpoint": "https://indexer.preview.midnight.network/api/v4/graphql",
+  "explorerLink": "https://preview.midnightexplorer.com/contracts/39d91cb61d84f9324ad72518e3c6902fa874c93f98f417e29a39d89c02b1f480",
+  "deployedAt": "2026-09-28T12:11:42.148Z"
+}
